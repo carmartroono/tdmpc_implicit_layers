@@ -65,3 +65,6 @@ Pretraining agent on seed data...
  train            E: 5                     I: 3,000                 R: 23.7                  S: 0.0                   T: 0:22:35
  train            E: 6                     I: 3,500                 R: 32.0                  S: 0.0                   T: 0:25:53
  train            E: 7                     I: 4,000                 R: 18.0                  S: 0.0                   T: 0:28:49
+ train            E: 8                     I: 4,500                 R: 64.6                  S: 0.0                   T: 0:31:48
+ train            E: 9                     I: 5,000                 R: 49.9                  S: 0.0                   T: 0:34:47
+ train            E: 10                    I: 5,500                 R: 34.6                  S: 0.0                   T: 0:37:49
