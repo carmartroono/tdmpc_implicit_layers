@@ -5,7 +5,8 @@ from tensordict import from_modules
 from copy import deepcopy
 from torchdeq import get_deq
 from torchdeq.norm import apply_norm, reset_norm
-from common.logger import Logger as logger
+
+
 class Ensemble(nn.Module):
 	"""
 	Vectorized ensemble of modules.
@@ -360,26 +361,6 @@ class DEQ_MLP(nn.Module):
                  f_solver='anderson', b_solver='anderson',
                  deq_num_layers=2, dropout=0.1, use_layer_norm=True,
                  log_stats=True, log_every_n_steps=100, lam=0.1, tau=1.0):
-        """
-        Args:
-            input_dim: Input dimension
-            hidden_dim: Hidden dimension for DEQ layers
-            output_dim: Output dimension
-            act: Activation function (SimNorm or None for GELU)
-            f_max_iter: Maximum iterations for forward solver
-            b_max_iter: Maximum iterations for backward solver
-            f_tol: Tolerance for forward solver
-            b_tol: Tolerance for backward solver
-            f_solver: Forward solver type
-            b_solver: Backward solver type
-            deq_num_layers: Number of layers in DEQ function
-            dropout: Dropout rate
-            use_layer_norm: Whether to use layer normalization
-            log_stats: Whether to log DEQ statistics
-            log_every_n_steps: Log frequency
-            lam: Regularization parameter for Anderson
-            tau: Damping factor for Anderson
-        """
         super().__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -395,10 +376,10 @@ class DEQ_MLP(nn.Module):
         self.stats = DEQStats()
         self.step_counter = 0
 
-        # Input projection with layer norm
+        # Input projection with normalization
         self.input_proj = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
-            nn.LayerNorm(hidden_dim) if use_layer_norm else nn.Identity(),
+            nn.LayerNorm(hidden_dim),
             self.act
         )
 
@@ -410,14 +391,14 @@ class DEQ_MLP(nn.Module):
             use_layer_norm=use_layer_norm
         )
 
-        # Output projection with residual connection
+        # Output projection with normalization
         self.output_proj = nn.Sequential(
             nn.Linear(hidden_dim, output_dim),
-            nn.LayerNorm(output_dim) if use_layer_norm else nn.Identity()
+            nn.LayerNorm(output_dim)
         )
 
-        # Skip connection from input to output
-        self.skip_proj = nn.Linear(input_dim, output_dim) if input_dim != output_dim else nn.Identity()
+        # Skip connection
+        self.skip_proj = nn.Linear(input_dim, output_dim)
 
         # Create DEQ solver with improved settings
         self.deq = get_deq(
@@ -464,15 +445,14 @@ class DEQ_MLP(nn.Module):
             else:
                 raise e
 
-        # Log statistics
+        # Log statistics (without calling logger.log_deq, as no instance is available)
         if self.log_stats and self.training:
             self.stats.update(info)
             self.step_counter += 1
 
             if self.step_counter % self.log_every_n_steps == 0:
                 summary = self.stats.get_summary()
-                if hasattr(logger, 'log_deq'):
-                    logger.log_deq(summary, self.step_counter)
+                # Removed: if hasattr(logger, 'log_deq'): logger.log_deq(summary, self.step_counter)
                 self.stats.reset()
 
         # Handle multiple trajectory outputs
@@ -660,15 +640,14 @@ class DEQ_CNN(nn.Module):
             else:
                 raise e
 
-        # Log statistics
+        # Log statistics (without calling logger.log_deq, as no instance is available)
         if self.log_stats and self.training:
             self.stats.update(info)
             self.step_counter += 1
 
             if self.step_counter % self.log_every_n_steps == 0:
                 summary = self.stats.get_summary()
-                if hasattr(logger, 'log_deq'):
-                    logger.log_deq(summary, self.step_counter)
+                # Removed: if hasattr(logger, 'log_deq'): logger.log_deq(summary, self.step_counter)
                 self.stats.reset()
 
         # Handle multiple trajectory outputs

@@ -19,3 +19,29 @@ config: {'task': 'cheetah-run', 'obs': 'state', 'episodic': False, 'checkpoint':
 2025-10-17 20:54:21,071 INFO    MainThread:1969920 [wandb_run.py:_redirect():2423] Wrapping output streams.
 2025-10-17 20:54:21,071 INFO    MainThread:1969920 [wandb_run.py:_redirect():2446] Redirects installed.
 2025-10-17 20:54:21,076 INFO    MainThread:1969920 [wandb_init.py:init():1076] run started, returning control to user process
+2025-10-17 20:55:31,424 ERROR   wandb-AsyncioManager-main:1969920 [redirect.py:_on_write():664] [all runs] error in stderr callback
+Traceback (most recent call last):
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/lib/redirect.py", line 662, in _on_write
+    cb(written_data)
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 2433, in <lambda>
+    lambda data: self._console_raw_callback("stderr", data),
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 399, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 457, in wrapper_fn
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 1595, in _console_raw_callback
+    self._backend.interface.publish_output_raw(name, data)
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/interface/interface.py", line 802, in publish_output_raw
+    self._publish_output_raw(o)
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/interface/interface_shared.py", line 37, in _publish_output_raw
+    self._publish(rec)
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/interface/interface_sock.py", line 43, in _publish
+    self._asyncer.run(lambda: self._client.publish(request))
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/lib/asyncio_manager.py", line 131, in run
+    raise ValueError("Cannot use run() inside async loop.")
+ValueError: Cannot use run() inside async loop.
+2025-10-17 21:05:09,585 INFO    wandb-AsyncioManager-main:1969920 [service_client.py:_forward_responses():80] Reached EOF.
+2025-10-17 21:05:09,585 INFO    wandb-AsyncioManager-main:1969920 [mailbox.py:close():137] Closing mailbox, abandoning 1 handles.
