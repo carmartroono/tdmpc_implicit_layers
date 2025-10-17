@@ -1,0 +1,67 @@
+Logs will be synced with wandb.
+Architecture: TD-MPC2 World Model
+Encoder: ModuleDict(
+  (state): DEQ_MLP(
+    (act): GELU(approximate='none')
+    (input_proj): Sequential(
+      (0): Linear(in_features=17, out_features=256, bias=True)
+      (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+      (2): GELU(approximate='none')
+    )
+    (deq_func): ImprovedDEQFunc(
+      (layers): Sequential(
+        (0): Linear(in_features=256, out_features=256, bias=True)
+        (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (2): GELU(approximate='none')
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=256, out_features=256, bias=True)
+        (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (6): GELU(approximate='none')
+        (7): Dropout(p=0.1, inplace=False)
+        (8): Linear(in_features=256, out_features=256, bias=True)
+        (9): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (10): GELU(approximate='none')
+      )
+    )
+    (output_proj): Sequential(
+      (0): Linear(in_features=256, out_features=512, bias=True)
+      (1): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
+    )
+    (skip_proj): Linear(in_features=17, out_features=512, bias=True)
+    (deq): DEQSliced()
+  )
+)
+Dynamics: Sequential(
+  (0): NormedLinear(in_features=518, out_features=512, bias=True, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): NormedLinear(in_features=512, out_features=512, bias=True, act=SimNorm)
+)
+Reward: Sequential(
+  (0): NormedLinear(in_features=518, out_features=512, bias=True, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): Linear(in_features=512, out_features=101, bias=True)
+)
+Policy prior: Sequential(
+  (0): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): Linear(in_features=512, out_features=12, bias=True)
+)
+Q-functions: Vectorized 5x Sequential(
+  (0): NormedLinear(in_features=518, out_features=512, bias=True, dropout=0.01, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): Linear(in_features=512, out_features=101, bias=True)
+)
+Learnable parameters: 5,166,955
+ eval             E: 0                     I: 0                     R: 2.7                   S: 0.0                   T: 0:10:03
+ train            E: 0                     I: 500                   R: 7.9                   S: 0.0                   T: 0:10:03
+Buffer capacity: 100,000
+Storage required: 0.01 GB
+Using CUDA:0 memory for storage.
+ train            E: 1                     I: 1,000                 R: 9.2                   S: 0.0                   T: 0:10:03
+ train            E: 2                     I: 1,500                 R: 10.1                  S: 0.0                   T: 0:10:03
+ train            E: 3                     I: 2,000                 R: 8.2                   S: 0.0                   T: 0:10:03
+ train            E: 4                     I: 2,500                 R: 5.1                   S: 0.0                   T: 0:10:03
+Pretraining agent on seed data...
+ train            E: 5                     I: 3,000                 R: 23.7                  S: 0.0                   T: 0:22:35
+ train            E: 6                     I: 3,500                 R: 32.0                  S: 0.0                   T: 0:25:53
+ train            E: 7                     I: 4,000                 R: 18.0                  S: 0.0                   T: 0:28:49

@@ -1,0 +1,23 @@
+2025-10-14 14:17:18,948 INFO    MainThread:3412049 [wandb_setup.py:_flush():81] Current SDK version is 0.22.1
+2025-10-14 14:17:18,948 INFO    MainThread:3412049 [wandb_setup.py:_flush():81] Configure stats pid to 3412049
+2025-10-14 14:17:18,948 INFO    MainThread:3412049 [wandb_setup.py:_flush():81] Loading settings from /home/lug15gew/.config/wandb/settings
+2025-10-14 14:17:18,948 INFO    MainThread:3412049 [wandb_setup.py:_flush():81] Loading settings from /home/lug15gew/Desktop/thesis/tdmpc2-main/tdmpc2/outputs/2025-10-14/14-17-04/wandb/settings
+2025-10-14 14:17:18,948 INFO    MainThread:3412049 [wandb_setup.py:_flush():81] Loading settings from environment variables
+2025-10-14 14:17:18,948 INFO    MainThread:3412049 [wandb_init.py:setup_run_log_directory():705] Logging user logs to /home/lug15gew/Desktop/thesis/tdmpc2-main/tdmpc2/logs/dog-run/1/default/wandb/run-20251014_141718-pd1q94ct/logs/debug.log
+2025-10-14 14:17:18,948 INFO    MainThread:3412049 [wandb_init.py:setup_run_log_directory():706] Logging internal logs to /home/lug15gew/Desktop/thesis/tdmpc2-main/tdmpc2/logs/dog-run/1/default/wandb/run-20251014_141718-pd1q94ct/logs/debug-internal.log
+2025-10-14 14:17:18,948 INFO    MainThread:3412049 [wandb_init.py:init():832] calling init triggers
+2025-10-14 14:17:18,948 INFO    MainThread:3412049 [wandb_init.py:init():837] wandb.init called with sweep_config: {}
+config: {'task': 'dog-run', 'obs': 'state', 'episodic': False, 'checkpoint': '???', 'eval_episodes': 10, 'eval_freq': 50000, 'steps': 1000000, 'batch_size': 256, 'reward_coef': 0.1, 'value_coef': 0.1, 'termination_coef': 1, 'consistency_coef': 20, 'rho': 0.5, 'lr': 0.0003, 'enc_lr_scale': 0.3, 'grad_clip_norm': 20, 'tau': 0.01, 'discount_denom': 5, 'discount_min': 0.95, 'discount_max': 0.995, 'buffer_size': 1000000, 'exp_name': 'default', 'data_dir': '???', 'mpc': True, 'iterations': 8, 'num_samples': 512, 'num_elites': 64, 'num_pi_trajs': 24, 'horizon': 3, 'min_std': 0.05, 'max_std': 2, 'temperature': 0.5, 'log_std_min': -10, 'log_std_max': 2, 'entropy_coef': 0.0001, 'num_bins': 101, 'vmin': -10, 'vmax': 10, 'model_size': '???', 'num_enc_layers': 2, 'enc_dim': 256, 'num_channels': 32, 'mlp_dim': 512, 'latent_dim': 512, 'task_dim': 0, 'num_q': 5, 'dropout': 0.01, 'simnorm_dim': 8, 'deq_f_max_iter': 50, 'deq_b_max_iter': 50, 'deq_f_tol': 0.0001, 'deq_b_tol': 1e-06, 'deq_f_solver': 'anderson', 'deq_b_solver': 'anderson', 'deq_num_layers': 3, 'deq_dropout': 0.1, 'deq_use_layer_norm': True, 'deq_use_batch_norm': True, 'deq_log_stats': True, 'deq_log_every_n_steps': 100, 'wandb_project': 'tdmpc_2_popitka_1', 'wandb_entity': 'carmartroono-rptu', 'wandb_silent': False, 'enable_wandb': True, 'save_csv': True, 'compile': True, 'save_video': True, 'save_agent': True, 'seed': 1, 'work_dir': PosixPath('/home/lug15gew/Desktop/thesis/tdmpc2-main/tdmpc2/logs/dog-run/1/default'), 'task_title': 'Dog Run', 'multitask': False, 'tasks': ['dog-run'], 'obs_shape': {'state': (223,)}, 'action_dim': 38, 'episode_length': 500, 'obs_shapes': '???', 'action_dims': '???', 'episode_lengths': '???', 'seed_steps': 2500, 'bin_size': 0.2, '_wandb': {}}
+2025-10-14 14:17:18,948 INFO    MainThread:3412049 [wandb_init.py:init():880] starting backend
+2025-10-14 14:17:20,192 INFO    MainThread:3412049 [wandb_init.py:init():883] sending inform_init request
+2025-10-14 14:17:20,213 INFO    MainThread:3412049 [wandb_init.py:init():891] backend started and connected
+2025-10-14 14:17:20,216 INFO    MainThread:3412049 [wandb_init.py:init():961] updated telemetry
+2025-10-14 14:17:20,217 INFO    MainThread:3412049 [wandb_init.py:init():985] communicating run to backend with 90.0 second timeout
+2025-10-14 14:17:21,363 INFO    MainThread:3412049 [wandb_init.py:init():1036] starting run threads in backend
+2025-10-14 14:17:21,936 INFO    MainThread:3412049 [wandb_run.py:_console_start():2506] atexit reg
+2025-10-14 14:17:21,936 INFO    MainThread:3412049 [wandb_run.py:_redirect():2354] redirect: wrap_raw
+2025-10-14 14:17:21,936 INFO    MainThread:3412049 [wandb_run.py:_redirect():2423] Wrapping output streams.
+2025-10-14 14:17:21,936 INFO    MainThread:3412049 [wandb_run.py:_redirect():2446] Redirects installed.
+2025-10-14 14:17:21,949 INFO    MainThread:3412049 [wandb_init.py:init():1076] run started, returning control to user process
+2025-10-14 14:17:24,938 INFO    wandb-AsyncioManager-main:3412049 [service_client.py:_forward_responses():80] Reached EOF.
+2025-10-14 14:17:24,938 INFO    wandb-AsyncioManager-main:3412049 [mailbox.py:close():137] Closing mailbox, abandoning 1 handles.

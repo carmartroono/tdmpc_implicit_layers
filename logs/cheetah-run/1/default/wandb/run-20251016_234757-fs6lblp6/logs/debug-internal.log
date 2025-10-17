@@ -1,0 +1,11 @@
+{"time":"2025-10-16T23:47:57.379310661+02:00","level":"INFO","msg":"stream: starting","core version":"0.22.1"}
+{"time":"2025-10-16T23:47:57.68915384+02:00","level":"INFO","msg":"stream: created new stream","id":"fs6lblp6"}
+{"time":"2025-10-16T23:47:57.689284534+02:00","level":"INFO","msg":"handler: started","stream_id":"fs6lblp6"}
+{"time":"2025-10-16T23:47:57.690894343+02:00","level":"INFO","msg":"stream: started","id":"fs6lblp6"}
+{"time":"2025-10-16T23:47:57.690931975+02:00","level":"INFO","msg":"writer: started","stream_id":"fs6lblp6"}
+{"time":"2025-10-16T23:47:57.690985131+02:00","level":"INFO","msg":"sender: started","stream_id":"fs6lblp6"}
+{"time":"2025-10-17T01:36:30.142210034+02:00","level":"INFO","msg":"stream: closing","id":"fs6lblp6"}
+{"time":"2025-10-17T01:36:31.107317473+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-10-17T01:36:31.374441981+02:00","level":"INFO","msg":"handler: closed","stream_id":"fs6lblp6"}
+{"time":"2025-10-17T01:36:31.375898855+02:00","level":"INFO","msg":"sender: closed","stream_id":"fs6lblp6"}
+{"time":"2025-10-17T01:36:31.375912238+02:00","level":"INFO","msg":"stream: closed","id":"fs6lblp6"}
