@@ -237,6 +237,7 @@ class DEQStats:
         self.backward_max_iters = []
         self.backward_mean_residuals = []
         self.backward_convergence_rates = []
+        self.singular_fallback_count = 0
 
     def update(self, info):
         """Update stats from DEQ solver info dict."""
@@ -282,6 +283,8 @@ class DEQStats:
                 self.backward_convergence_rates.append(conv.float().mean().item())
             else:
                 self.backward_convergence_rates.append(float(conv))
+        if 'singular_fallback' in info:
+            self.singular_fallback_count += 1
 
     def get_summary(self):
         """Get summary statistics."""
@@ -301,6 +304,8 @@ class DEQStats:
             summary['backward_residual_mean'] = sum(self.backward_mean_residuals) / len(self.backward_mean_residuals)
         summary['backward_convergence_rate'] = sum(self.backward_convergence_rates) / len(
             self.backward_convergence_rates) if self.backward_convergence_rates else 1.0
+
+        summary['singular_fallback_rate'] = self.singular_fallback_count / max(len(self.forward_mean_iters), 1)
 
         return summary
 
@@ -354,7 +359,7 @@ class DEQ_MLP(nn.Module):
                  f_max_iter=100, b_max_iter=100, f_tol=1e-3, b_tol=1e-6,
                  f_solver='anderson', b_solver='anderson',
                  deq_num_layers=2, dropout=0.1, use_layer_norm=True,
-                 log_stats=True, log_every_n_steps=100, lam=1e-3, tau=1.0):
+                 log_stats=True, log_every_n_steps=100, lam=0.1, tau=1.0):
         """
         Args:
             input_dim: Input dimension
@@ -382,6 +387,9 @@ class DEQ_MLP(nn.Module):
         self.act = act if act is not None else nn.GELU()
         self.log_stats = log_stats
         self.log_every_n_steps = log_every_n_steps
+
+        self.f_max_iter = f_max_iter
+        self.f_tol = f_tol
 
         # Statistics tracking
         self.stats = DEQStats()
@@ -440,8 +448,21 @@ class DEQ_MLP(nn.Module):
         if hasattr(self.act, 'reset_parameters'):
             reset_norm(self.deq_func)
 
-        # Solve for equilibrium
-        z_star, info = self.deq(self.deq_func, z0)
+        # Solve for equilibrium with fallback
+        try:
+            z_star, info = self.deq(self.deq_func, z0)
+        except RuntimeError as e:
+            if 'singular' in str(e).lower():
+                print("Singular matrix detected, falling back to fixed point iteration")
+                z_star = z0.clone()
+                for _ in range(self.f_max_iter):
+                    z_star = self.deq_func(z_star)
+                diff = z_star - self.deq_func(z_star)
+                residual = torch.norm(diff, dim=-1).mean().item()
+                converged = residual < self.f_tol
+                info = {'nstep': self.f_max_iter, 'residual': residual, 'converged': converged, 'singular_fallback': True}
+            else:
+                raise e
 
         # Log statistics
         if self.log_stats and self.training:
@@ -450,9 +471,8 @@ class DEQ_MLP(nn.Module):
 
             if self.step_counter % self.log_every_n_steps == 0:
                 summary = self.stats.get_summary()
-                #logger.info(f"DEQ_MLP Stats (step {self.step_counter}):")
-                #for k, v in summary.items():
-                #    logger.info(f"  {k}: {v:.4f}")
+                if hasattr(logger, 'log_deq'):
+                    logger.log_deq(summary, self.step_counter)
                 self.stats.reset()
 
         # Handle multiple trajectory outputs
@@ -519,7 +539,7 @@ class DEQ_CNN(nn.Module):
                  f_max_iter=100, b_max_iter=100, f_tol=1e-3, b_tol=1e-6,
                  f_solver='anderson', b_solver='anderson',
                  deq_num_layers=2, use_batch_norm=True,
-                 log_stats=True, log_every_n_steps=100, lam=1e-3, tau=1.0):
+                 log_stats=True, log_every_n_steps=100, lam=0.1, tau=1.0):
         """
         Args:
             obs_shape: Shape of RGB observation (C, H, W)
@@ -546,6 +566,9 @@ class DEQ_CNN(nn.Module):
         self.act = act if act is not None else nn.GELU()
         self.log_stats = log_stats
         self.log_every_n_steps = log_every_n_steps
+
+        self.f_max_iter = f_max_iter
+        self.f_tol = f_tol
 
         # Statistics tracking
         self.stats = DEQStats()
@@ -621,8 +644,21 @@ class DEQ_CNN(nn.Module):
         if hasattr(self.act, 'reset_parameters'):
             reset_norm(self.deq_func)
 
-        # Solve for equilibrium
-        z_star, info = self.deq(self.deq_func, z0)
+        # Solve for equilibrium with fallback
+        try:
+            z_star, info = self.deq(self.deq_func, z0)
+        except RuntimeError as e:
+            if 'singular' in str(e).lower():
+                print("Singular matrix detected, falling back to fixed point iteration")
+                z_star = z0.clone()
+                for _ in range(self.f_max_iter):
+                    z_star = self.deq_func(z_star)
+                diff = z_star - self.deq_func(z_star)
+                residual = torch.norm(diff, dim=(-3,-2,-1)).mean().item()
+                converged = residual < self.f_tol
+                info = {'nstep': self.f_max_iter, 'residual': residual, 'converged': converged, 'singular_fallback': True}
+            else:
+                raise e
 
         # Log statistics
         if self.log_stats and self.training:
@@ -631,9 +667,8 @@ class DEQ_CNN(nn.Module):
 
             if self.step_counter % self.log_every_n_steps == 0:
                 summary = self.stats.get_summary()
-                #logger.info(f"DEQ_CNN Stats (step {self.step_counter}):")
-                #for k, v in summary.items():
-                #    logger.info(f"  {k}: {v:.4f}")
+                if hasattr(logger, 'log_deq'):
+                    logger.log_deq(summary, self.step_counter)
                 self.stats.reset()
 
         # Handle multiple trajectory outputs
@@ -686,7 +721,7 @@ def enc_deq(cfg, out={}):
                 # Logging
                 log_stats=getattr(cfg, 'deq_log_stats', True),
                 log_every_n_steps=getattr(cfg, 'deq_log_every_n_steps', 100),
-                lam=1e-3,
+                lam=0.1,
                 tau=1.0
             )
         elif k == 'rgb':
@@ -708,7 +743,7 @@ def enc_deq(cfg, out={}):
                 # Logging
                 log_stats=getattr(cfg, 'deq_log_stats', True),
                 log_every_n_steps=getattr(cfg, 'deq_log_every_n_steps', 100),
-                lam=1e-3,
+                lam=0.1,
                 tau=1.0
             )
         else:
