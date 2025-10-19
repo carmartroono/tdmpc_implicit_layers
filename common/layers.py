@@ -348,6 +348,7 @@ class ImprovedDEQFunc(nn.Module):
 
     def forward(self, z):
         """Apply function with residual connection."""
+        alpha_clamped = torch.clamp(self.alpha, min=0.01, max=0.1)
         return z + self.alpha * self.layers(z)
 
 
@@ -360,7 +361,7 @@ class DEQ_MLP(nn.Module):
                  f_max_iter=100, b_max_iter=100, f_tol=1e-3, b_tol=1e-6,
                  f_solver='anderson', b_solver='anderson',
                  deq_num_layers=2, dropout=0.1, use_layer_norm=True,
-                 log_stats=True, log_every_n_steps=100, lam=0.1, tau=1.0):
+                 log_stats=True, log_every_n_steps=100, deq_lam=0.1, deq_tau=1.0):
         super().__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -371,7 +372,8 @@ class DEQ_MLP(nn.Module):
 
         self.f_max_iter = f_max_iter
         self.f_tol = f_tol
-
+        self.deq_tau =deq_tau
+        self.deq_lam = deq_lam
         # Statistics tracking
         self.stats = DEQStats()
         self.step_counter = 0
@@ -408,10 +410,10 @@ class DEQ_MLP(nn.Module):
             b_tol=b_tol,
             f_solver=f_solver,
             b_solver=b_solver,
-            f_lam=lam,
-            b_lam=lam,
-            f_tau=tau,
-            b_tau=tau
+            f_lam=deq_lam,
+            b_lam=deq_lam,
+            f_tau=deq_tau,
+            b_tau=deq_tau
         )
 
     @torch._dynamo.disable
@@ -437,7 +439,8 @@ class DEQ_MLP(nn.Module):
                 print("Singular matrix detected, falling back to fixed point iteration")
                 z_star = z0.clone()
                 for _ in range(self.f_max_iter):
-                    z_star = self.deq_func(z_star)
+                    z_star = (1 - 0.3) * z_star + 0.3 * self.deq_func(z_star)
+                    #z_star = self.deq_func(z_star)
                 diff = z_star - self.deq_func(z_star)
                 residual = torch.norm(diff, dim=-1).mean().item()
                 converged = residual < self.f_tol
@@ -496,7 +499,7 @@ class ImprovedDEQConvFunc(nn.Module):
 
         # Residual scaling
         self.alpha = nn.Parameter(torch.ones(1) * 0.05)
-
+        # В forward():
         self._init_weights()
 
     def _init_weights(self):
@@ -507,7 +510,8 @@ class ImprovedDEQConvFunc(nn.Module):
                     nn.init.zeros_(m.bias)
 
     def forward(self, z):
-        return z + self.alpha * self.layers(z)
+        alpha_clamped = torch.clamp(self.alpha, min=0.01, max=0.1)
+        return z + alpha_clamped * self.layers(z)
 
 
 class DEQ_CNN(nn.Module):
@@ -519,7 +523,7 @@ class DEQ_CNN(nn.Module):
                  f_max_iter=100, b_max_iter=100, f_tol=1e-3, b_tol=1e-6,
                  f_solver='anderson', b_solver='anderson',
                  deq_num_layers=2, use_batch_norm=True,
-                 log_stats=True, log_every_n_steps=100, lam=0.1, tau=1.0):
+                 log_stats=True, log_every_n_steps=100, deq_lam=0.1, deq_tau=1.0):
         """
         Args:
             obs_shape: Shape of RGB observation (C, H, W)
@@ -549,7 +553,8 @@ class DEQ_CNN(nn.Module):
 
         self.f_max_iter = f_max_iter
         self.f_tol = f_tol
-
+        self.deq_lam = deq_lam
+        self.deq_tau = deq_tau
         # Statistics tracking
         self.stats = DEQStats()
         self.step_counter = 0
@@ -603,10 +608,10 @@ class DEQ_CNN(nn.Module):
             b_tol=b_tol,
             f_solver=f_solver,
             b_solver=b_solver,
-            f_lam=lam,
-            b_lam=lam,
-            f_tau=tau,
-            b_tau=tau
+            f_lam=deq_lam,
+            b_lam=deq_lam,
+            f_tau=deq_tau,
+            b_tau=deq_tau
         )
 
     @torch._dynamo.disable
@@ -631,8 +636,10 @@ class DEQ_CNN(nn.Module):
             if 'singular' in str(e).lower():
                 print("Singular matrix detected, falling back to fixed point iteration")
                 z_star = z0.clone()
+
                 for _ in range(self.f_max_iter):
-                    z_star = self.deq_func(z_star)
+                    #z_star = self.deq_func(z_star)
+                    z_star = (1 - 0.3) * z_star + 0.3 * self.deq_func(z_star)
                 diff = z_star - self.deq_func(z_star)
                 residual = torch.norm(diff, dim=(-3,-2,-1)).mean().item()
                 converged = residual < self.f_tol
@@ -700,8 +707,8 @@ def enc_deq(cfg, out={}):
                 # Logging
                 log_stats=getattr(cfg, 'deq_log_stats', True),
                 log_every_n_steps=getattr(cfg, 'deq_log_every_n_steps', 100),
-                lam=0.1,
-                tau=1.0
+                deq_lam=getattr(cfg, 'deq_tau', 0.1),
+                deq_tau=getattr(cfg, 'deq_tau', 1.0)
             )
         elif k == 'rgb':
             out[k] = DEQ_CNN(
@@ -722,8 +729,8 @@ def enc_deq(cfg, out={}):
                 # Logging
                 log_stats=getattr(cfg, 'deq_log_stats', True),
                 log_every_n_steps=getattr(cfg, 'deq_log_every_n_steps', 100),
-                lam=0.1,
-                tau=1.0
+                deq_lam=getattr(cfg, 'deq_tau', 0.1),
+                deq_tau=getattr(cfg, 'deq_tau', 1.0)
             )
         else:
             raise NotImplementedError(f"DEQ encoder for observation type {k} not implemented.")

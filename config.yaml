@@ -9,7 +9,7 @@ episodic: false
 # evaluation
 checkpoint: ???
 eval_episodes: 10
-eval_freq: 50000
+eval_freq: 5000
 
 # training
 steps: 1_000_000
@@ -69,13 +69,15 @@ deq_b_max_iter: 50           # Backward pass iterations (increased from 40)
 deq_f_tol: 1e-4              # Forward tolerance (tighter from 1e-3)
 deq_b_tol: 1e-6              # Backward tolerance (kept same)
 deq_f_solver: 'anderson'     # Forward solver (kept)
-deq_b_solver: 'anderson'     # Backward solver (kept)
+deq_b_solver: 'broyden'     # Backward solver (kept)
 deq_num_layers: 3            # Layers in DEQ function (new)
 deq_dropout: 0.1             # Dropout rate for MLP (new)
 deq_use_layer_norm: true
-deq_use_batch_norm: true     # Batch normalization for CNN (new)
+deq_use_batch_norm: false     # Batch normalization for CNN (new)
 deq_log_stats: true          # Enable DEQ statistics logging
 deq_log_every_n_steps: 100   # Log frequency
+deq_lam: 0.3
+deq_tau: 1.5
 
 # logging
 wandb_project: tdmpc_2_popitka_1

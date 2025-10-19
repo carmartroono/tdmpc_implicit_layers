@@ -343,7 +343,7 @@ class Logger:
 			pd.DataFrame(np.array(self._eval)).to_csv(
 				self._log_dir / "eval.csv", header=keys, index=None
 			)
-		self._print(d, category)
+		#self._print(d, category)
 
 	def log_deq(self, summary, step):
 		if self._wandb:
