@@ -1,0 +1,6 @@
+{"time":"2025-10-19T14:07:59.280092667+02:00","level":"INFO","msg":"stream: starting","core version":"0.22.1"}
+{"time":"2025-10-19T14:07:59.593938599+02:00","level":"INFO","msg":"stream: created new stream","id":"dsi49jsz"}
+{"time":"2025-10-19T14:07:59.594026161+02:00","level":"INFO","msg":"handler: started","stream_id":"dsi49jsz"}
+{"time":"2025-10-19T14:07:59.595773333+02:00","level":"INFO","msg":"stream: started","id":"dsi49jsz"}
+{"time":"2025-10-19T14:07:59.595843724+02:00","level":"INFO","msg":"writer: started","stream_id":"dsi49jsz"}
+{"time":"2025-10-19T14:07:59.595873577+02:00","level":"INFO","msg":"sender: started","stream_id":"dsi49jsz"}

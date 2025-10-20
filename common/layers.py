@@ -313,7 +313,7 @@ class DEQStats:
 
 class ImprovedDEQFunc(nn.Module):
     """
-    Improved DEQ function with residual connections, normalization, and better initialization.
+    Improved DEQ function with better stability and noise injection.
     """
 
     def __init__(self, hidden_dim, num_layers=2, dropout=0.1, use_layer_norm=True):
@@ -332,35 +332,43 @@ class ImprovedDEQFunc(nn.Module):
 
         self.layers = nn.Sequential(*layers)
 
-        # Residual scaling factor (learnable)
-        self.alpha = nn.Parameter(torch.ones(1) * 0.05)
+        # ИЗМЕНЕНИЕ: Более консервативная alpha
+        self.alpha = nn.Parameter(torch.ones(1) * 0.01)  # было 0.05
 
-        # Initialize weights for stability
+        # НОВОЕ: Spectral normalization для стабильности
+        self.use_spectral_norm = True
+        if self.use_spectral_norm:
+            for m in self.layers:
+                if isinstance(m, nn.Linear):
+                    nn.utils.spectral_norm(m)
+
         self._init_weights()
 
     def _init_weights(self):
-        """Initialize weights for better convergence."""
+        """Initialize weights with smaller values for stability."""
         for m in self.modules():
             if isinstance(m, nn.Linear):
-                nn.init.xavier_uniform_(m.weight, gain=0.1)
+                # ИЗМЕНЕНИЕ: Еще меньший gain для большей стабильности
+                nn.init.xavier_uniform_(m.weight, gain=0.05)  # было 0.1
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
 
     def forward(self, z):
         """Apply function with residual connection."""
-        alpha_clamped = torch.clamp(self.alpha, min=0.01, max=0.1)
-        return z + self.alpha * self.layers(z)
+        # ИЗМЕНЕНИЕ: Более консервативный clamp
+        alpha_clamped = torch.clamp(self.alpha, min=0.001, max=0.05)  # было 0.01-0.1
+        return z + alpha_clamped * self.layers(z)
 
 
 class DEQ_MLP(nn.Module):
     """
-    Improved Deep Equilibrium MLP encoder with better architecture and logging.
+    Improved Deep Equilibrium MLP with better stability and warm-up.
     """
 
     def __init__(self, input_dim, hidden_dim, output_dim, act=None,
-                 f_max_iter=100, b_max_iter=100, f_tol=1e-3, b_tol=1e-6,
-                 f_solver='anderson', b_solver='anderson',
-                 deq_num_layers=2, dropout=0.1, use_layer_norm=True,
+                 f_max_iter=30, b_max_iter=30, f_tol=5e-3, b_tol=1e-5,
+                 f_solver='broyden', b_solver='broyden',
+                 deq_num_layers=2, dropout=0.05, use_layer_norm=True,
                  log_stats=True, log_every_n_steps=100, deq_lam=0.1, deq_tau=1.0):
         super().__init__()
         self.input_dim = input_dim
@@ -372,13 +380,18 @@ class DEQ_MLP(nn.Module):
 
         self.f_max_iter = f_max_iter
         self.f_tol = f_tol
-        self.deq_tau =deq_tau
+        self.deq_tau = deq_tau
         self.deq_lam = deq_lam
+
+        # НОВОЕ: Warm-up period
+        self.warmup_steps = 1000
+        self.current_step = 0
+
         # Statistics tracking
         self.stats = DEQStats()
         self.step_counter = 0
 
-        # Input projection with normalization
+        # Input projection
         self.input_proj = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
@@ -393,212 +406,15 @@ class DEQ_MLP(nn.Module):
             use_layer_norm=use_layer_norm
         )
 
-        # Output projection with normalization
+        # Output projection
         self.output_proj = nn.Sequential(
             nn.Linear(hidden_dim, output_dim),
             nn.LayerNorm(output_dim)
         )
 
-        # Skip connection
+        # Skip connection with learnable weight
         self.skip_proj = nn.Linear(input_dim, output_dim)
-
-        # Create DEQ solver with improved settings
-        self.deq = get_deq(
-            f_max_iter=f_max_iter,
-            b_max_iter=b_max_iter,
-            f_tol=f_tol,
-            b_tol=b_tol,
-            f_solver=f_solver,
-            b_solver=b_solver,
-            f_lam=deq_lam,
-            b_lam=deq_lam,
-            f_tau=deq_tau,
-            b_tau=deq_tau
-        )
-
-    @torch._dynamo.disable
-    def forward(self, x):
-        """
-        Args:
-            x: Input tensor of shape (batch_size, input_dim)
-        Returns:
-            Output tensor of shape (batch_size, output_dim)
-        """
-        # Project input to hidden dimension
-        z0 = self.input_proj(x)
-
-        # Apply normalization if using SimNorm
-        if hasattr(self.act, 'reset_parameters'):
-            reset_norm(self.deq_func)
-
-        # Solve for equilibrium with fallback
-        try:
-            z_star, info = self.deq(self.deq_func, z0)
-        except RuntimeError as e:
-            if 'singular' in str(e).lower():
-                print("Singular matrix detected, falling back to fixed point iteration")
-                z_star = z0.clone()
-                for _ in range(self.f_max_iter):
-                    z_star = (1 - 0.3) * z_star + 0.3 * self.deq_func(z_star)
-                    #z_star = self.deq_func(z_star)
-                diff = z_star - self.deq_func(z_star)
-                residual = torch.norm(diff, dim=-1).mean().item()
-                converged = residual < self.f_tol
-                info = {'nstep': self.f_max_iter, 'residual': residual, 'converged': converged, 'singular_fallback': True}
-            else:
-                raise e
-
-        # Log statistics (without calling logger.log_deq, as no instance is available)
-        if self.log_stats and self.training:
-            self.stats.update(info)
-            self.step_counter += 1
-
-            if self.step_counter % self.log_every_n_steps == 0:
-                summary = self.stats.get_summary()
-                # Removed: if hasattr(logger, 'log_deq'): logger.log_deq(summary, self.step_counter)
-                self.stats.reset()
-
-        # Handle multiple trajectory outputs
-        if isinstance(z_star, (list, tuple)):
-            z_final = z_star[-1]
-        else:
-            z_final = z_star
-
-        # Apply normalization after DEQ
-        if hasattr(self.act, 'reset_parameters'):
-            apply_norm(self.deq_func, z_final - z0, self.training)
-
-        # Project to output dimension with residual
-        out = self.output_proj(z_final)
-
-        # Add skip connection
-        skip = self.skip_proj(x)
-        out = out + skip
-
-        return out
-
-
-class ImprovedDEQConvFunc(nn.Module):
-    """
-    Improved DEQ convolutional function with residual connections.
-    """
-
-    def __init__(self, num_channels, num_layers=2, use_batch_norm=True):
-        super().__init__()
-        self.num_channels = num_channels
-        self.num_layers = num_layers
-
-        layers = []
-        for i in range(num_layers):
-            layers.append(nn.Conv2d(num_channels, num_channels, kernel_size=3, padding=1))
-            if use_batch_norm:
-                layers.append(nn.BatchNorm2d(num_channels))
-            layers.append(nn.GELU())
-
-        self.layers = nn.Sequential(*layers)
-
-        # Residual scaling
-        self.alpha = nn.Parameter(torch.ones(1) * 0.05)
-        # В forward():
-        self._init_weights()
-
-    def _init_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu', a=0.1)
-                if m.bias is not None:
-                    nn.init.zeros_(m.bias)
-
-    def forward(self, z):
-        alpha_clamped = torch.clamp(self.alpha, min=0.01, max=0.1)
-        return z + alpha_clamped * self.layers(z)
-
-
-class DEQ_CNN(nn.Module):
-    """
-    Improved Deep Equilibrium CNN encoder with better architecture and logging.
-    """
-
-    def __init__(self, obs_shape, num_channels, latent_dim, act=None,
-                 f_max_iter=100, b_max_iter=100, f_tol=1e-3, b_tol=1e-6,
-                 f_solver='anderson', b_solver='anderson',
-                 deq_num_layers=2, use_batch_norm=True,
-                 log_stats=True, log_every_n_steps=100, deq_lam=0.1, deq_tau=1.0):
-        """
-        Args:
-            obs_shape: Shape of RGB observation (C, H, W)
-            num_channels: Number of channels in conv layers
-            latent_dim: Output dimension
-            act: Activation function
-            f_max_iter: Maximum iterations for forward solver
-            b_max_iter: Maximum iterations for backward solver
-            f_tol: Tolerance for forward solver
-            b_tol: Tolerance for backward solver
-            f_solver: Forward solver type
-            b_solver: Backward solver type
-            deq_num_layers: Number of layers in DEQ function
-            use_batch_norm: Whether to use batch normalization
-            log_stats: Whether to log DEQ statistics
-            log_every_n_steps: Log frequency
-            lam: Regularization parameter for Anderson
-            tau: Damping factor for Anderson
-        """
-        super().__init__()
-        self.obs_shape = obs_shape
-        self.num_channels = num_channels
-        self.latent_dim = latent_dim
-        self.act = act if act is not None else nn.GELU()
-        self.log_stats = log_stats
-        self.log_every_n_steps = log_every_n_steps
-
-        self.f_max_iter = f_max_iter
-        self.f_tol = f_tol
-        self.deq_lam = deq_lam
-        self.deq_tau = deq_tau
-        # Statistics tracking
-        self.stats = DEQStats()
-        self.step_counter = 0
-
-        # Input convolution with normalization
-        self.input_conv = nn.Sequential(
-            nn.Conv2d(obs_shape[0], num_channels, kernel_size=7, stride=2),
-            nn.BatchNorm2d(num_channels) if use_batch_norm else nn.Identity(),
-            self.act
-        )
-
-        # Improved DEQ function
-        self.deq_func = ImprovedDEQConvFunc(
-            num_channels=num_channels,
-            num_layers=deq_num_layers,
-            use_batch_norm=use_batch_norm
-        )
-
-        # Progressive downsampling with skip connections
-        self.downsample1 = nn.Sequential(
-            nn.Conv2d(num_channels, num_channels, kernel_size=5, stride=2),
-            nn.BatchNorm2d(num_channels) if use_batch_norm else nn.Identity(),
-            self.act,
-        )
-        self.downsample2 = nn.Sequential(
-            nn.Conv2d(num_channels, num_channels, kernel_size=3, stride=2),
-            nn.BatchNorm2d(num_channels) if use_batch_norm else nn.Identity(),
-            self.act,
-        )
-        self.final_conv = nn.Sequential(
-            nn.Conv2d(num_channels, num_channels, kernel_size=3, stride=1),
-            nn.BatchNorm2d(num_channels) if use_batch_norm else nn.Identity(),
-            self.act,
-        )
-
-        # Adaptive pooling for consistent output size
-        self.adaptive_pool = nn.AdaptiveAvgPool2d((4, 4))
-
-        # Final projection
-        flattened_size = num_channels * 4 * 4
-        self.output_proj = nn.Sequential(
-            nn.Linear(flattened_size, latent_dim),
-            nn.LayerNorm(latent_dim)
-        )
+        self.skip_weight = nn.Parameter(torch.ones(1) * 0.5)  # НОВОЕ
 
         # Create DEQ solver
         self.deq = get_deq(
@@ -617,47 +433,72 @@ class DEQ_CNN(nn.Module):
     @torch._dynamo.disable
     def forward(self, x):
         """
-        Args:
-            x: Input tensor of shape (batch_size, C, H, W)
-        Returns:
-            Output tensor of shape (batch_size, latent_dim)
+        Forward pass with noise injection and adaptive solver.
         """
-        # Input convolution
-        z0 = self.input_conv(x)
+        self.current_step += 1
 
-        # Apply normalization if applicable
+        # Project input
+        z0 = self.input_proj(x)
+
+        # НОВОЕ: Добавить шум к z0 во время warm-up
+        if self.training and self.current_step < self.warmup_steps:
+            noise_scale = 0.01 * (1.0 - self.current_step / self.warmup_steps)
+            z0 = z0 + torch.randn_like(z0) * noise_scale
+
+        # Apply normalization if needed
         if hasattr(self.act, 'reset_parameters'):
             reset_norm(self.deq_func)
 
-        # Solve for equilibrium with fallback
+        # ИЗМЕНЕНИЕ: Улучшенный fallback с более мягкой релаксацией
         try:
             z_star, info = self.deq(self.deq_func, z0)
         except RuntimeError as e:
             if 'singular' in str(e).lower():
-                print("Singular matrix detected, falling back to fixed point iteration")
-                z_star = z0.clone()
+                if self.training:
+                    print(f"[Step {self.current_step}] Singular matrix, using fallback")
 
-                for _ in range(self.f_max_iter):
-                    #z_star = self.deq_func(z_star)
-                    z_star = (1 - 0.3) * z_star + 0.3 * self.deq_func(z_star)
+                z_star = z0.clone()
+                # ИЗМЕНЕНИЕ: Адаптивная релаксация
+                omega = 0.1 if self.current_step < self.warmup_steps else 0.3
+
+                for i in range(self.f_max_iter):
+                    z_new = self.deq_func(z_star)
+                    z_star = (1 - omega) * z_star + omega * z_new
+
+                    # Early stopping
+                    if i % 5 == 0:
+                        diff = z_star - z_new
+                        residual = torch.norm(diff, dim=-1).mean().item()
+                        if residual < self.f_tol * 5:  # Более мягкий критерий
+                            break
+
                 diff = z_star - self.deq_func(z_star)
-                residual = torch.norm(diff, dim=(-3,-2,-1)).mean().item()
-                converged = residual < self.f_tol
-                info = {'nstep': self.f_max_iter, 'residual': residual, 'converged': converged, 'singular_fallback': True}
+                residual = torch.norm(diff, dim=-1).mean().item()
+                converged = residual < self.f_tol * 5
+                info = {
+                    'nstep': i + 1,
+                    'residual': residual,
+                    'converged': converged,
+                    'singular_fallback': True
+                }
             else:
                 raise e
 
-        # Log statistics (without calling logger.log_deq, as no instance is available)
+        # Log statistics
         if self.log_stats and self.training:
             self.stats.update(info)
             self.step_counter += 1
 
             if self.step_counter % self.log_every_n_steps == 0:
                 summary = self.stats.get_summary()
-                # Removed: if hasattr(logger, 'log_deq'): logger.log_deq(summary, self.step_counter)
+                # Print for debugging
+                print(f"[DEQ Stats @ {self.step_counter}] "
+                      f"Iters: {summary.get('forward_iters_mean', 0):.1f}, "
+                      f"Residual: {summary.get('forward_residual_mean', 0):.2e}, "
+                      f"Conv Rate: {summary.get('forward_convergence_rate', 0):.2%}")
                 self.stats.reset()
 
-        # Handle multiple trajectory outputs
+        # Handle trajectory outputs
         if isinstance(z_star, (list, tuple)):
             z_final = z_star[-1]
         else:
@@ -667,20 +508,220 @@ class DEQ_CNN(nn.Module):
         if hasattr(self.act, 'reset_parameters'):
             apply_norm(self.deq_func, z_final - z0, self.training)
 
-        # Progressive downsampling
+        # Project to output
+        out = self.output_proj(z_final)
+
+        # ИЗМЕНЕНИЕ: Адаптивный skip connection
+        skip = self.skip_proj(x)
+        skip_w = torch.sigmoid(self.skip_weight)  # 0-1 range
+        out = (1 - skip_w) * out + skip_w * skip
+
+        return out
+
+
+class ImprovedDEQConvFunc(nn.Module):
+    """
+    Improved DEQ convolutional function with spectral normalization.
+    """
+
+    def __init__(self, num_channels, num_layers=2, use_batch_norm=True):
+        super().__init__()
+        self.num_channels = num_channels
+        self.num_layers = num_layers
+
+        layers = []
+        for i in range(num_layers):
+            conv = nn.Conv2d(num_channels, num_channels, kernel_size=3, padding=1)
+            # НОВОЕ: Spectral normalization
+            conv = nn.utils.spectral_norm(conv)
+            layers.append(conv)
+
+            if use_batch_norm:
+                layers.append(nn.BatchNorm2d(num_channels))
+            layers.append(nn.GELU())
+
+        self.layers = nn.Sequential(*layers)
+
+        # ИЗМЕНЕНИЕ: Более консервативная alpha
+        self.alpha = nn.Parameter(torch.ones(1) * 0.01)  # было 0.05
+
+        self._init_weights()
+
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                # ИЗМЕНЕНИЕ: Меньший gain
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu', a=0.05)
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+
+    def forward(self, z):
+        alpha_clamped = torch.clamp(self.alpha, min=0.001, max=0.05)
+        return z + alpha_clamped * self.layers(z)
+
+
+class DEQ_CNN(nn.Module):
+    """
+    Improved Deep Equilibrium CNN with better stability.
+    """
+
+    def __init__(self, obs_shape, num_channels, latent_dim, act=None,
+                 f_max_iter=30, b_max_iter=30, f_tol=5e-3, b_tol=1e-5,
+                 f_solver='broyden', b_solver='broyden',
+                 deq_num_layers=2, use_batch_norm=True,
+                 log_stats=True, log_every_n_steps=100, deq_lam=0.1, deq_tau=1.0):
+        super().__init__()
+        self.obs_shape = obs_shape
+        self.num_channels = num_channels
+        self.latent_dim = latent_dim
+        self.act = act if act is not None else nn.GELU()
+        self.log_stats = log_stats
+        self.log_every_n_steps = log_every_n_steps
+
+        self.f_max_iter = f_max_iter
+        self.f_tol = f_tol
+        self.deq_lam = deq_lam
+        self.deq_tau = deq_tau
+
+        # НОВОЕ: Warm-up
+        self.warmup_steps = 1000
+        self.current_step = 0
+
+        self.stats = DEQStats()
+        self.step_counter = 0
+
+        # Input convolution
+        self.input_conv = nn.Sequential(
+            nn.Conv2d(obs_shape[0], num_channels, kernel_size=7, stride=2),
+            nn.BatchNorm2d(num_channels) if use_batch_norm else nn.Identity(),
+            self.act
+        )
+
+        # DEQ function
+        self.deq_func = ImprovedDEQConvFunc(
+            num_channels=num_channels,
+            num_layers=deq_num_layers,
+            use_batch_norm=use_batch_norm
+        )
+
+        # Downsampling
+        self.downsample1 = nn.Sequential(
+            nn.Conv2d(num_channels, num_channels, kernel_size=5, stride=2),
+            nn.BatchNorm2d(num_channels) if use_batch_norm else nn.Identity(),
+            self.act,
+        )
+        self.downsample2 = nn.Sequential(
+            nn.Conv2d(num_channels, num_channels, kernel_size=3, stride=2),
+            nn.BatchNorm2d(num_channels) if use_batch_norm else nn.Identity(),
+            self.act,
+        )
+        self.final_conv = nn.Sequential(
+            nn.Conv2d(num_channels, num_channels, kernel_size=3, stride=1),
+            nn.BatchNorm2d(num_channels) if use_batch_norm else nn.Identity(),
+            self.act,
+        )
+
+        self.adaptive_pool = nn.AdaptiveAvgPool2d((4, 4))
+
+        # Final projection
+        flattened_size = num_channels * 4 * 4
+        self.output_proj = nn.Sequential(
+            nn.Linear(flattened_size, latent_dim),
+            nn.LayerNorm(latent_dim)
+        )
+
+        # DEQ solver
+        self.deq = get_deq(
+            f_max_iter=f_max_iter,
+            b_max_iter=b_max_iter,
+            f_tol=f_tol,
+            b_tol=b_tol,
+            f_solver=f_solver,
+            b_solver=b_solver,
+            f_lam=deq_lam,
+            b_lam=deq_lam,
+            f_tau=deq_tau,
+            b_tau=deq_tau
+        )
+
+    @torch._dynamo.disable
+    def forward(self, x):
+        """Forward pass with noise injection during warm-up."""
+        self.current_step += 1
+
+        # Input convolution
+        z0 = self.input_conv(x)
+
+        # НОВОЕ: Добавить шум во время warm-up
+        if self.training and self.current_step < self.warmup_steps:
+            noise_scale = 0.005 * (1.0 - self.current_step / self.warmup_steps)
+            z0 = z0 + torch.randn_like(z0) * noise_scale
+
+        if hasattr(self.act, 'reset_parameters'):
+            reset_norm(self.deq_func)
+
+        # Solve with improved fallback
+        try:
+            z_star, info = self.deq(self.deq_func, z0)
+        except RuntimeError as e:
+            if 'singular' in str(e).lower():
+                if self.training:
+                    print(f"[Step {self.current_step}] CNN Singular matrix, using fallback")
+
+                z_star = z0.clone()
+                omega = 0.1 if self.current_step < self.warmup_steps else 0.3
+
+                for i in range(self.f_max_iter):
+                    z_new = self.deq_func(z_star)
+                    z_star = (1 - omega) * z_star + omega * z_new
+
+                    if i % 5 == 0:
+                        diff = z_star - z_new
+                        residual = torch.norm(diff, dim=(-3, -2, -1)).mean().item()
+                        if residual < self.f_tol * 5:
+                            break
+
+                diff = z_star - self.deq_func(z_star)
+                residual = torch.norm(diff, dim=(-3, -2, -1)).mean().item()
+                converged = residual < self.f_tol * 5
+                info = {
+                    'nstep': i + 1,
+                    'residual': residual,
+                    'converged': converged,
+                    'singular_fallback': True
+                }
+            else:
+                raise e
+
+        if self.log_stats and self.training:
+            self.stats.update(info)
+            self.step_counter += 1
+
+            if self.step_counter % self.log_every_n_steps == 0:
+                summary = self.stats.get_summary()
+                print(f"[DEQ CNN Stats @ {self.step_counter}] "
+                      f"Iters: {summary.get('forward_iters_mean', 0):.1f}, "
+                      f"Residual: {summary.get('forward_residual_mean', 0):.2e}")
+                self.stats.reset()
+
+        if isinstance(z_star, (list, tuple)):
+            z_final = z_star[-1]
+        else:
+            z_final = z_star
+
+        if hasattr(self.act, 'reset_parameters'):
+            apply_norm(self.deq_func, z_final - z0, self.training)
+
+        # Downsampling and projection
         z_final = self.downsample1(z_final)
         z_final = self.downsample2(z_final)
         z_final = self.final_conv(z_final)
-
-        # Adaptive pooling for robustness
         z_final = self.adaptive_pool(z_final)
 
-        # Flatten and project
         out = z_final.flatten(1)
         out = self.output_proj(out)
 
         return out
-
 
 def enc_deq(cfg, out={}):
     """

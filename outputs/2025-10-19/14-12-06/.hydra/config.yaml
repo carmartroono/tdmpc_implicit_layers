@@ -1,36 +1,26 @@
-defaults:
-    - override hydra/launcher: submitit_local
-
-# environment
 task: cheetah-run
 obs: state
 episodic: false
-
-# evaluation
 checkpoint: ???
 eval_episodes: 10
 eval_freq: 5000
-
-# training
-steps: 1_000_000
+steps: 1000000
 batch_size: 256
 reward_coef: 0.1
 value_coef: 0.1
 termination_coef: 1
 consistency_coef: 20
 rho: 0.5
-lr: 3e-4
+lr: 0.0003
 enc_lr_scale: 0.3
 grad_clip_norm: 20
 tau: 0.01
 discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
-buffer_size: 100_000
+buffer_size: 100000
 exp_name: default
 data_dir: ???
-
-# planning
 mpc: true
 iterations: 6
 num_samples: 512
@@ -40,18 +30,12 @@ horizon: 3
 min_std: 0.05
 max_std: 2
 temperature: 0.5
-
-# actor
 log_std_min: -10
 log_std_max: 2
-entropy_coef: 1e-4
-
-# critic
+entropy_coef: 0.0001
 num_bins: 101
 vmin: -10
-vmax: +10
-
-# architecture
+vmax: 10
 model_size: ???
 num_enc_layers: 2
 enc_dim: 256
@@ -62,36 +46,29 @@ task_dim: 96
 num_q: 5
 dropout: 0.01
 simnorm_dim: 8
-
-# DEQ hyperparameters - OPTIMIZED
-deq_f_max_iter: 30           # Меньше итераций = быстрее fallback
-deq_b_max_iter: 30
-deq_f_tol: 5e-3              # Более мягкий tolerance (было 1e-4)
-deq_b_tol: 1e-5              # Немного мягче
-deq_f_solver: 'anderson'      # Broyden более стабилен чем Anderson
-deq_b_solver: 'broyden'
-deq_num_layers: 2            # Меньше слоев = проще сходимость (было 3)
-deq_dropout: 0.05            # Меньше dropout (было 0.1)
+deq_f_max_iter: 50
+deq_b_max_iter: 50
+deq_f_tol: 0.0001
+deq_b_tol: 1.0e-06
+deq_f_solver: anderson
+deq_b_solver: broyden
+deq_num_layers: 3
+deq_dropout: 0.1
 deq_use_layer_norm: true
-deq_use_batch_norm: true     # Включить для CNN
+deq_use_batch_norm: false
 deq_log_stats: true
 deq_log_every_n_steps: 100
-deq_lam: 0.1                 # Меньше регуляризации (было 0.3)
-deq_tau: 1.0                 # Стандартный damping (было 1.5)
-# logging
+deq_lam: 0.3
+deq_tau: 1.5
 wandb_project: tdmpc_2_popitka_1
 wandb_entity: carmartroono-rptu
 wandb_silent: false
 enable_wandb: true
 save_csv: true
-
-# misc
 compile: false
 save_video: true
 save_agent: true
 seed: 1
-
-# convenience
 work_dir: ???
 task_title: ???
 multitask: ???

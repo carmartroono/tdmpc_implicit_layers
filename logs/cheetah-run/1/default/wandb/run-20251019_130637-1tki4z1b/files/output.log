@@ -1,0 +1,111 @@
+Logs will be synced with wandb.
+Architecture: TD-MPC2 World Model
+Encoder: ModuleDict(
+  (state): DEQ_MLP(
+    (act): GELU(approximate='none')
+    (input_proj): Sequential(
+      (0): Linear(in_features=17, out_features=256, bias=True)
+      (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+      (2): GELU(approximate='none')
+    )
+    (deq_func): ImprovedDEQFunc(
+      (layers): Sequential(
+        (0): Linear(in_features=256, out_features=256, bias=True)
+        (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (2): GELU(approximate='none')
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=256, out_features=256, bias=True)
+        (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (6): GELU(approximate='none')
+        (7): Dropout(p=0.1, inplace=False)
+        (8): Linear(in_features=256, out_features=256, bias=True)
+        (9): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (10): GELU(approximate='none')
+      )
+    )
+    (output_proj): Sequential(
+      (0): Linear(in_features=256, out_features=512, bias=True)
+      (1): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
+    )
+    (skip_proj): Linear(in_features=17, out_features=512, bias=True)
+    (deq): DEQSliced()
+  )
+)
+Dynamics: Sequential(
+  (0): NormedLinear(in_features=518, out_features=512, bias=True, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): NormedLinear(in_features=512, out_features=512, bias=True, act=SimNorm)
+)
+Reward: Sequential(
+  (0): NormedLinear(in_features=518, out_features=512, bias=True, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): Linear(in_features=512, out_features=101, bias=True)
+)
+Policy prior: Sequential(
+  (0): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): Linear(in_features=512, out_features=12, bias=True)
+)
+Q-functions: Vectorized 5x Sequential(
+  (0): NormedLinear(in_features=518, out_features=512, bias=True, dropout=0.01, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): Linear(in_features=512, out_features=101, bias=True)
+)
+Learnable parameters: 5,166,955
+[2025-10-19 13:06:42,917][absl][WARNING] - Nan, Inf or huge value in CTRL at ACTUATOR 0. The simulation is unstable. Time = 0.0000.
+Error executing job with overrides: []
+Traceback (most recent call last):
+  File "/home/lug15gew/Desktop/thesis/tdmpc2-main/tdmpc2/train.py", line 69, in <module>
+    train()
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/main.py", line 94, in decorated_main
+    _run_hydra(
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/_internal/utils.py", line 394, in _run_hydra
+    _run_app(
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/_internal/utils.py", line 457, in _run_app
+    run_and_report(
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/_internal/utils.py", line 223, in run_and_report
+    raise ex
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/_internal/utils.py", line 220, in run_and_report
+    return func()
+           ^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/_internal/utils.py", line 458, in <lambda>
+    lambda: hydra.run(
+            ^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/_internal/hydra.py", line 132, in run
+    _ = ret.return_value
+        ^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/core/utils.py", line 260, in return_value
+    raise self._return_value
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/core/utils.py", line 186, in run_job
+    ret.return_value = task_function(task_cfg)
+                       ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/tdmpc2-main/tdmpc2/train.py", line 64, in train
+    trainer.train()
+  File "/home/lug15gew/Desktop/thesis/tdmpc2-main/tdmpc2/trainer/online_trainer.py", line 85, in train
+    eval_metrics = self.eval()
+                   ^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/tdmpc2-main/tdmpc2/trainer/online_trainer.py", line 38, in eval
+    obs, reward, done, info = self.env.step(action)
+                              ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/tdmpc2-main/tdmpc2/envs/wrappers/tensor.py", line 38, in step
+    obs, reward, done, info = self.env.step(action.numpy())
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/tdmpc2-main/tdmpc2/envs/wrappers/timeout.py", line 22, in step
+    obs, reward, done, info = self.env.step(action)
+                              ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/tdmpc2-main/tdmpc2/envs/dmcontrol.py", line 60, in step
+    step = self.env.step(action)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/dm_control/suite/wrappers/action_scale.py", line 91, in step
+    return self._env.step(self._transform(action))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/dm_control/rl/control.py", line 106, in step
+    self._physics.step(self._n_sub_steps)
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/dm_control/mujoco/engine.py", line 172, in step
+    with self.check_invalid_state():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.12/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/dm_control/mujoco/engine.py", line 344, in check_invalid_state
+    raise _control.PhysicsError(message)
+dm_control.rl.control.PhysicsError: Physics state is invalid. Warning(s) raised: mjWARN_BADCTRL

@@ -6,6 +6,7 @@ os.environ['TORCH_LOGS'] = "+recompiles"
 os.environ["HYDRA_FULL_ERROR"] = "1"
 os.environ['TORCHDYNAMO_VERBOSE']='1'
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+os.environ["TORCH_USE_CUDA_DSA"] = "1"
 import warnings
 warnings.filterwarnings('ignore')
 import torch

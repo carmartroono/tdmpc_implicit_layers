@@ -1,0 +1,12 @@
+{"time":"2025-10-17T21:11:39.995340681+02:00","level":"INFO","msg":"stream: starting","core version":"0.22.1"}
+{"time":"2025-10-17T21:11:40.311822178+02:00","level":"INFO","msg":"stream: created new stream","id":"icd3je4p"}
+{"time":"2025-10-17T21:11:40.311872788+02:00","level":"INFO","msg":"handler: started","stream_id":"icd3je4p"}
+{"time":"2025-10-17T21:11:40.313547879+02:00","level":"INFO","msg":"stream: started","id":"icd3je4p"}
+{"time":"2025-10-17T21:11:40.313619818+02:00","level":"INFO","msg":"sender: started","stream_id":"icd3je4p"}
+{"time":"2025-10-17T21:11:40.31362042+02:00","level":"INFO","msg":"writer: started","stream_id":"icd3je4p"}
+{"time":"2025-10-17T23:42:26.273336431+02:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/carmartroono-rptu/tdmpc_2_popitka_1/icd3je4p/file_stream","body":"\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>502 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"}
+{"time":"2025-10-18T00:39:00.035186024+02:00","level":"INFO","msg":"stream: closing","id":"icd3je4p"}
+{"time":"2025-10-18T00:39:01.179613057+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-10-18T00:39:01.410303343+02:00","level":"INFO","msg":"handler: closed","stream_id":"icd3je4p"}
+{"time":"2025-10-18T00:39:01.411573612+02:00","level":"INFO","msg":"sender: closed","stream_id":"icd3je4p"}
+{"time":"2025-10-18T00:39:01.411590172+02:00","level":"INFO","msg":"stream: closed","id":"icd3je4p"}
