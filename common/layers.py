@@ -524,10 +524,11 @@ class ImprovedDEQConvFunc(nn.Module):
     Improved DEQ convolutional function with spectral normalization.
     """
 
-    def __init__(self, num_channels, num_layers=2, use_batch_norm=True):
+    def __init__(self, num_channels, num_layers=2, norm_type='batch'):
         super().__init__()
         self.num_channels = num_channels
         self.num_layers = num_layers
+        self.norm_type = norm_type
 
         layers = []
         for i in range(num_layers):
@@ -536,8 +537,16 @@ class ImprovedDEQConvFunc(nn.Module):
             conv = nn.utils.spectral_norm(conv)
             layers.append(conv)
 
-            if use_batch_norm:
+            # ИЗМЕНЕНИЕ: Выбор типа нормализации
+            if norm_type == 'batch':
                 layers.append(nn.BatchNorm2d(num_channels))
+            elif norm_type == 'instance':
+                layers.append(nn.InstanceNorm2d(num_channels))
+            elif norm_type == 'none':
+                pass  # Без нормализации
+            else:
+                raise ValueError(f"Unknown norm_type: {norm_type}. Use 'batch', 'instance', or 'none'.")
+            
             layers.append(nn.GELU())
 
         self.layers = nn.Sequential(*layers)
@@ -568,7 +577,7 @@ class DEQ_CNN(nn.Module):
     def __init__(self, obs_shape, num_channels, latent_dim, act=None,
                  f_max_iter=30, b_max_iter=30, f_tol=5e-3, b_tol=1e-5,
                  f_solver='broyden', b_solver='broyden',
-                 deq_num_layers=2, use_batch_norm=True,
+                 deq_num_layers=2, norm_type='batch',
                  log_stats=True, log_every_n_steps=100, deq_lam=0.1, deq_tau=1.0):
         super().__init__()
         self.obs_shape = obs_shape
@@ -577,6 +586,7 @@ class DEQ_CNN(nn.Module):
         self.act = act if act is not None else nn.GELU()
         self.log_stats = log_stats
         self.log_every_n_steps = log_every_n_steps
+        self.norm_type = norm_type
 
         self.f_max_iter = f_max_iter
         self.f_tol = f_tol
@@ -590,10 +600,21 @@ class DEQ_CNN(nn.Module):
         self.stats = DEQStats()
         self.step_counter = 0
 
+        # Helper function для создания нормализации
+        def get_norm_layer(channels):
+            if norm_type == 'batch':
+                return nn.BatchNorm2d(channels)
+            elif norm_type == 'instance':
+                return nn.InstanceNorm2d(channels)
+            elif norm_type == 'none':
+                return nn.Identity()
+            else:
+                raise ValueError(f"Unknown norm_type: {norm_type}")
+
         # Input convolution
         self.input_conv = nn.Sequential(
             nn.Conv2d(obs_shape[0], num_channels, kernel_size=7, stride=2),
-            nn.BatchNorm2d(num_channels) if use_batch_norm else nn.Identity(),
+            get_norm_layer(num_channels),
             self.act
         )
 
@@ -601,23 +622,23 @@ class DEQ_CNN(nn.Module):
         self.deq_func = ImprovedDEQConvFunc(
             num_channels=num_channels,
             num_layers=deq_num_layers,
-            use_batch_norm=use_batch_norm
+            norm_type=norm_type
         )
 
         # Downsampling
         self.downsample1 = nn.Sequential(
             nn.Conv2d(num_channels, num_channels, kernel_size=5, stride=2),
-            nn.BatchNorm2d(num_channels) if use_batch_norm else nn.Identity(),
+            get_norm_layer(num_channels),
             self.act,
         )
         self.downsample2 = nn.Sequential(
             nn.Conv2d(num_channels, num_channels, kernel_size=3, stride=2),
-            nn.BatchNorm2d(num_channels) if use_batch_norm else nn.Identity(),
+            get_norm_layer(num_channels),
             self.act,
         )
         self.final_conv = nn.Sequential(
             nn.Conv2d(num_channels, num_channels, kernel_size=3, stride=1),
-            nn.BatchNorm2d(num_channels) if use_batch_norm else nn.Identity(),
+            get_norm_layer(num_channels),
             self.act,
         )
 
@@ -766,7 +787,7 @@ def enc_deq(cfg, out={}):
                 b_solver=getattr(cfg, 'deq_b_solver', 'anderson'),
                 # Architecture improvements
                 deq_num_layers=getattr(cfg, 'deq_num_layers', 2),
-                use_batch_norm=getattr(cfg, 'deq_use_batch_norm', True),
+                norm_type=getattr(cfg, 'deq_cnn_norm_type', 'batch'),  # НОВОЕ: параметр нормализации
                 # Logging
                 log_stats=getattr(cfg, 'deq_log_stats', True),
                 log_every_n_steps=getattr(cfg, 'deq_log_every_n_steps', 100),

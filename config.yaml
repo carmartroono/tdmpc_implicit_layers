@@ -64,16 +64,17 @@ dropout: 0.01
 simnorm_dim: 8
 
 # DEQ hyperparameters - OPTIMIZED
-deq_f_max_iter: 30           # Меньше итераций = быстрее fallback
-deq_b_max_iter: 30
-deq_f_tol: 5e-3              # Более мягкий tolerance (было 1e-4)
+deq_f_max_iter: 25           # Меньше итераций = быстрее fallback
+deq_b_max_iter: 25
+deq_f_tol: 1e-4              # Более мягкий tolerance (было 1e-4)
 deq_b_tol: 1e-5              # Немного мягче
 deq_f_solver: 'anderson'      # Broyden более стабилен чем Anderson
 deq_b_solver: 'broyden'
 deq_num_layers: 2            # Меньше слоев = проще сходимость (было 3)
 deq_dropout: 0.05            # Меньше dropout (было 0.1)
 deq_use_layer_norm: true
-deq_use_batch_norm: true     # Включить для CNN
+deq_use_batch_norm: false     # Включить для CNN
+deq_cnn_norm_type: 'batch'
 deq_log_stats: true
 deq_log_every_n_steps: 100
 deq_lam: 0.1                 # Меньше регуляризации (было 0.3)
