@@ -72,10 +72,10 @@ deq_f_solver: 'anderson'      # Broyden более стабилен чем Ander
 deq_b_solver: 'broyden'
 deq_num_layers: 2            # Меньше слоев = проще сходимость (было 3)
 deq_dropout: 0.05            # Меньше dropout (было 0.1)
-deq_use_layer_norm: true
-deq_use_batch_norm: false     # Включить для CNN
-deq_cnn_norm_type: 'batch'
+deq_mlp_norm_type: 'layer'
+deq_cnn_norm_type: 'None'
 deq_log_stats: true
+
 deq_log_every_n_steps: 100
 deq_lam: 0.1                 # Меньше регуляризации (было 0.3)
 deq_tau: 1.0                 # Стандартный damping (было 1.5)
