@@ -782,7 +782,7 @@ def enc_deq(cfg, out={}):
                 # Logging
                 log_stats=getattr(cfg, 'deq_log_stats', True),
                 log_every_n_steps=getattr(cfg, 'deq_log_every_n_steps', 100),
-                deq_lam=getattr(cfg, 'deq_tau', 0.1),
+                deq_lam=getattr(cfg, 'deq_lam', 0.1),
                 deq_tau=getattr(cfg, 'deq_tau', 1.0)
             )
         elif k == 'rgb':

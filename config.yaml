@@ -2,7 +2,7 @@ defaults:
     - override hydra/launcher: submitit_local
 
 # environment
-task: dog-run
+task: cheetah-run
 obs: state
 episodic: false
 
@@ -17,7 +17,7 @@ batch_size: 256
 reward_coef: 0.1
 value_coef: 0.1
 termination_coef: 1
-consistency_coef: 20
+consistency_coef: 5
 rho: 0.5
 lr: 3e-4
 enc_lr_scale: 0.3
@@ -27,7 +27,7 @@ discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
 buffer_size: 400_000
-exp_name: default
+exp_name: noderen_warmup
 data_dir: ???
 
 # planning
@@ -63,24 +63,47 @@ num_q: 5
 dropout: 0.01
 simnorm_dim: 8
 
-# DEQ hyperparameters - OPTIMIZED
-deq_f_max_iter: 25           # Меньше итераций = быстрее fallback
-deq_b_max_iter: 25
-deq_f_tol: 1e-4              # Более мягкий tolerance (было 1e-4)
-deq_b_tol: 1e-5              # Немного мягче
-deq_f_solver: 'anderson'      # Broyden более стабилен чем Anderson
+# DEQ hyperparameters - STABLE
+deq_f_max_iter: 20
+deq_b_max_iter: 20
+deq_f_tol: 1e-4
+deq_b_tol: 1e-5
+deq_f_solver: 'anderson'
 deq_b_solver: 'broyden'
-deq_num_layers: 2            # Меньше слоев = проще сходимость (было 3)
-deq_dropout: 0.05            # Меньше dropout (было 0.1)
+deq_num_layers: 2
+deq_dropout: 0.05
 deq_mlp_norm_type: 'layer'
-deq_cnn_norm_type: 'None'
+deq_cnn_norm_type: 'none'
 deq_log_stats: true
-
 deq_log_every_n_steps: 100
-deq_lam: 0.1                 # Меньше регуляризации (было 0.3)
-deq_tau: 1.0                 # Стандартный damping (было 1.5)
+deq_lam: 0.1
+deq_tau: 1.0
+
+
+
+# NODE-REN параметры - ОПТИМИЗИРОВАННЫЕ
+noderen_nq: 8
+noderen_sigma: 'tanh'
+noderen_epsilon: 0.01  # Уменьшил с 0.1 - лучше для стабильности
+noderen_bias: true
+noderen_alpha: 0.05  # Уменьшил с 0.1 - менее агрессивная контракция
+noderen_linear_output: false
+noderen_dt: 0.01  # Уменьшил с 0.05 - ключевое изменение!
+noderen_method: 'dopri5'  # Adaptive solver вместо euler
+noderen_step_size: 0.005  # Меньше для стабильности
+noderen_rtol: 1.0e-4  # Менее строгий для скорости
+noderen_atol: 1.0e-6
+noderen_lr_scale: 0.1  # Очень низкий LR для NODE-REN!
+noderen_warmup_steps: 20000  # Увеличил с 5000
+noderen_weight_decay: 1e-4  # Для параметров NODE-REN
+noderen_spectral_norm: true  # Спектральная нормализация
+noderen_grad_clip: 1.0  # Отдельно от общего grad_clip_norm
+
+# Частота обновления
+noderen_update_freq: 1  # Обновлять каждый шаг, а не каждые 10!
+
 # logging
-wandb_project: tdmpc_2_popitka_1
+wandb_project: tdmpc2_noderen_warmup
 wandb_entity: carmartroono-rptu
 wandb_silent: false
 enable_wandb: true
