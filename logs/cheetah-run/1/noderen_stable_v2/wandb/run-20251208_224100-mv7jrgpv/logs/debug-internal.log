@@ -1,0 +1,7 @@
+{"time":"2025-12-08T22:41:00.797234722+01:00","level":"INFO","msg":"stream: starting","core version":"0.22.1"}
+{"time":"2025-12-08T22:41:01.112677099+01:00","level":"INFO","msg":"stream: created new stream","id":"mv7jrgpv"}
+{"time":"2025-12-08T22:41:01.112771468+01:00","level":"INFO","msg":"handler: started","stream_id":"mv7jrgpv"}
+{"time":"2025-12-08T22:41:01.114981087+01:00","level":"INFO","msg":"stream: started","id":"mv7jrgpv"}
+{"time":"2025-12-08T22:41:01.115079072+01:00","level":"INFO","msg":"sender: started","stream_id":"mv7jrgpv"}
+{"time":"2025-12-08T22:41:01.115086524+01:00","level":"INFO","msg":"writer: started","stream_id":"mv7jrgpv"}
+{"time":"2025-12-09T01:11:32.404016568+01:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/carmartroono-rptu/tdmpc2_noderen_stable/mv7jrgpv/file_stream","body":"\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>502 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"}

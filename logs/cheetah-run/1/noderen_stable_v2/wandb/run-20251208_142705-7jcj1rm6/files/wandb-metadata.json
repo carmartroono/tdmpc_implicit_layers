@@ -1,0 +1,39 @@
+{
+  "os":  "Linux-4.18.0-553.85.1.el8_10.x86_64-x86_64-with-glibc2.28",
+  "python":  "CPython 3.12.11",
+  "startedAt":  "2025-12-08T13:27:05.792642Z",
+  "program":  "/home/lug15gew/Desktop/thesis/popec/train.py",
+  "codePath":  "train.py",
+  "git":  {
+    "remote":  "https://gitlab.rhrk.uni-kl.de/lug15gew/tdmpc_implicit.git",
+    "commit":  "a432707b18449f90d2c8e7dd4c768aa03df2f7f2"
+  },
+  "email":  "atabek.1923@gmail.com",
+  "root":  "/home/lug15gew/Desktop/thesis/popec/logs/cheetah-run/1/noderen_stable_v2",
+  "host":  "dcv1",
+  "executable":  "/home/lug15gew/Desktop/thesis/.venv/bin/python",
+  "cpu_count":  16,
+  "cpu_count_logical":  32,
+  "gpu":  "Quadro RTX 8000",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "64393052160",
+      "used":  "44308676608"
+    }
+  },
+  "memory":  {
+    "total":  "201397059584"
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "Quadro RTX 8000",
+      "memoryTotal":  "51539607552",
+      "cudaCores":  4608,
+      "architecture":  "Turing",
+      "uuid":  "GPU-2cea2c9c-763f-76ae-7371-967c0bf2e6af"
+    }
+  ],
+  "cudaVersion":  "13.0",
+  "writerId":  "x9onny0rwy898plqz76v1cjpsqe0pcqz"
+}

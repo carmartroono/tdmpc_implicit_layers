@@ -1,0 +1,6 @@
+{"time":"2025-12-12T14:34:09.276831465+01:00","level":"INFO","msg":"stream: starting","core version":"0.22.1"}
+{"time":"2025-12-12T14:34:09.592092629+01:00","level":"INFO","msg":"stream: created new stream","id":"tubtubo8"}
+{"time":"2025-12-12T14:34:09.592188147+01:00","level":"INFO","msg":"handler: started","stream_id":"tubtubo8"}
+{"time":"2025-12-12T14:34:09.758928271+01:00","level":"INFO","msg":"stream: started","id":"tubtubo8"}
+{"time":"2025-12-12T14:34:09.758959622+01:00","level":"INFO","msg":"writer: started","stream_id":"tubtubo8"}
+{"time":"2025-12-12T14:34:09.759000226+01:00","level":"INFO","msg":"sender: started","stream_id":"tubtubo8"}

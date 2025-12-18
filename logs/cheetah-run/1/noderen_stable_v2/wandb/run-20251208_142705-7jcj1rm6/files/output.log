@@ -1,0 +1,102 @@
+Logs will be synced with wandb.
+Architecture: TD-MPC2 World Model with NODE-REN
+Encoder: ModuleDict(
+  (state): DEQ_MLP(
+    (act): GELU(approximate='none')
+    (input_proj): Sequential(
+      (0): Linear(in_features=17, out_features=256, bias=True)
+      (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+      (2): GELU(approximate='none')
+    )
+    (deq_func): DEQFunc(
+      (layers): Sequential(
+        (0): Linear(in_features=256, out_features=256, bias=True)
+        (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (2): GELU(approximate='none')
+      )
+    )
+    (output_proj): Sequential(
+      (0): Linear(in_features=256, out_features=512, bias=True)
+      (1): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
+    )
+    (skip_proj): Linear(in_features=17, out_features=512, bias=True)
+    (deq): DEQSliced()
+  )
+)
+Dynamics: NODE_REN(
+  (sys): _System_contractive(
+    (act): Tanh()
+  )
+)
+Reward: Sequential(
+  (0): NormedLinear(in_features=518, out_features=512, bias=True, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): Linear(in_features=512, out_features=101, bias=True)
+)
+Policy prior: Sequential(
+  (0): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): Linear(in_features=512, out_features=12, bias=True)
+)
+Q-functions: Vectorized 5x Sequential(
+  (0): NormedLinear(in_features=518, out_features=512, bias=True, dropout=0.01, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): Linear(in_features=512, out_features=101, bias=True)
+)
+Learnable parameters: 5,329,116
+Error executing job with overrides: []
+Traceback (most recent call last):
+  File "/home/lug15gew/Desktop/thesis/popec/train.py", line 70, in <module>
+    train()
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/main.py", line 94, in decorated_main
+    _run_hydra(
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/_internal/utils.py", line 394, in _run_hydra
+    _run_app(
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/_internal/utils.py", line 457, in _run_app
+    run_and_report(
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/_internal/utils.py", line 223, in run_and_report
+    raise ex
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/_internal/utils.py", line 220, in run_and_report
+    return func()
+           ^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/_internal/utils.py", line 458, in <lambda>
+    lambda: hydra.run(
+            ^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/_internal/hydra.py", line 132, in run
+    _ = ret.return_value
+        ^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/core/utils.py", line 260, in return_value
+    raise self._return_value
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/hydra/core/utils.py", line 186, in run_job
+    ret.return_value = task_function(task_cfg)
+                       ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/popec/train.py", line 65, in train
+    trainer.train()
+  File "/home/lug15gew/Desktop/thesis/popec/trainer/online_trainer.py", line 85, in train
+    eval_metrics = self.eval()
+                   ^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/popec/trainer/online_trainer.py", line 37, in eval
+    action = self.agent.act(obs, t0=t==0, eval_mode=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib64/python3.12/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/popec/tdmpc2.py", line 117, in act
+    return self.plan(obs, t0=t0, eval_mode=eval_mode, task=task).cpu()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib64/python3.12/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/popec/tdmpc2.py", line 186, in _plan
+    value = self._estimate_value(z, actions, task).nan_to_num(0)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib64/python3.12/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/popec/tdmpc2.py", line 131, in _estimate_value
+    z = self.model.next(z, actions[t], task)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/popec/common/world_model.py", line 209, in next
+    z = self.ema_decay * self.ema_z + (1 - self.ema_decay) * z
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~
+RuntimeError: The size of tensor a (24) must match the size of tensor b (512) at non-singleton dimension 0

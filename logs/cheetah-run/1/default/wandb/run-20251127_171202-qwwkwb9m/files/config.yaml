@@ -1,0 +1,248 @@
+_wandb:
+    value:
+        cli_version: 0.22.1
+        e:
+            ro3j0t3airbcipalw8uvtbexuxgp80cp:
+                codePath: train.py
+                cpu_count: 16
+                cpu_count_logical: 32
+                cudaVersion: "13.0"
+                disk:
+                    /:
+                        total: "64393052160"
+                        used: "43825176576"
+                email: atabek.1923@gmail.com
+                executable: /home/lug15gew/Desktop/thesis/.venv/bin/python
+                git:
+                    commit: 46508be24470f5b1eea6431ff175f1018a24c66c
+                    remote: https://gitlab.rhrk.uni-kl.de/lug15gew/tdmpc_implicit.git
+                gpu: Quadro RTX 8000
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Turing
+                      cudaCores: 4608
+                      memoryTotal: "51539607552"
+                      name: Quadro RTX 8000
+                      uuid: GPU-eb420eaf-53ed-21c4-c009-5b04eebc7455
+                host: dcv4
+                memory:
+                    total: "201397047296"
+                os: Linux-4.18.0-553.83.1.el8_10.x86_64-x86_64-with-glibc2.28
+                program: /home/lug15gew/Desktop/thesis/popec/train.py
+                python: CPython 3.12.11
+                root: /home/lug15gew/Desktop/thesis/popec/logs/cheetah-run/1/default
+                startedAt: "2025-11-27T16:12:02.350632Z"
+                writerId: ro3j0t3airbcipalw8uvtbexuxgp80cp
+        m: []
+        python_version: 3.12.11
+        t:
+            "1":
+                - 1
+                - 50
+                - 105
+            "2":
+                - 1
+                - 50
+                - 105
+            "3":
+                - 13
+                - 15
+                - 16
+                - 61
+            "4": 3.12.11
+            "5": 0.22.1
+            "12": 0.22.1
+            "13": linux-x86_64
+action_dim:
+    value: 6
+action_dims:
+    value: ???
+batch_size:
+    value: 256
+bin_size:
+    value: 0.2
+buffer_size:
+    value: 400000
+checkpoint:
+    value: ???
+compile:
+    value: false
+consistency_coef:
+    value: 20
+data_dir:
+    value: ???
+deq_b_max_iter:
+    value: 25
+deq_b_solver:
+    value: broyden
+deq_b_tol:
+    value: 1e-05
+deq_cnn_norm_type:
+    value: None
+deq_dropout:
+    value: 0.05
+deq_f_max_iter:
+    value: 25
+deq_f_solver:
+    value: anderson
+deq_f_tol:
+    value: 0.0001
+deq_lam:
+    value: 0.1
+deq_log_every_n_steps:
+    value: 100
+deq_log_stats:
+    value: true
+deq_mlp_norm_type:
+    value: layer
+deq_num_layers:
+    value: 2
+deq_tau:
+    value: 1
+discount_denom:
+    value: 5
+discount_max:
+    value: 0.995
+discount_min:
+    value: 0.95
+dropout:
+    value: 0.01
+enable_wandb:
+    value: true
+enc_dim:
+    value: 256
+enc_lr_scale:
+    value: 0.3
+entropy_coef:
+    value: 0.0001
+episode_length:
+    value: 500
+episode_lengths:
+    value: ???
+episodic:
+    value: false
+eval_episodes:
+    value: 10
+eval_freq:
+    value: 5000
+exp_name:
+    value: default
+grad_clip_norm:
+    value: 20
+horizon:
+    value: 3
+iterations:
+    value: 6
+latent_dim:
+    value: 512
+log_std_max:
+    value: 2
+log_std_min:
+    value: -10
+lr:
+    value: 0.0003
+max_std:
+    value: 2
+min_std:
+    value: 0.05
+mlp_dim:
+    value: 512
+model_size:
+    value: ???
+mpc:
+    value: true
+multitask:
+    value: false
+noderen_alpha:
+    value: 0
+noderen_atol:
+    value: 1e-09
+noderen_bias:
+    value: false
+noderen_dt:
+    value: 0.1
+noderen_epsilon:
+    value: 0.05
+noderen_linear_output:
+    value: false
+noderen_lr_scale:
+    value: 1
+noderen_method:
+    value: rk4
+noderen_nq:
+    value: 5
+noderen_rtol:
+    value: 1e-07
+noderen_sigma:
+    value: tanh
+noderen_step_size:
+    value: 0.05
+num_bins:
+    value: 101
+num_channels:
+    value: 32
+num_elites:
+    value: 64
+num_enc_layers:
+    value: 2
+num_pi_trajs:
+    value: 24
+num_q:
+    value: 5
+num_samples:
+    value: 512
+obs:
+    value: state
+obs_shape:
+    value:
+        state:
+            - 17
+obs_shapes:
+    value: ???
+reward_coef:
+    value: 0.1
+rho:
+    value: 0.5
+save_agent:
+    value: true
+save_csv:
+    value: true
+save_video:
+    value: true
+seed:
+    value: 1
+seed_steps:
+    value: 2500
+simnorm_dim:
+    value: 8
+steps:
+    value: 5000000
+task:
+    value: cheetah-run
+task_dim:
+    value: 0
+task_title:
+    value: Cheetah Run
+tasks:
+    value:
+        - cheetah-run
+tau:
+    value: 0.01
+temperature:
+    value: 0.5
+termination_coef:
+    value: 1
+value_coef:
+    value: 0.1
+vmax:
+    value: 10
+vmin:
+    value: -10
+wandb_entity:
+    value: carmartroono-rptu
+wandb_project:
+    value: tdmpc_2_popitka_1
+wandb_silent:
+    value: false
+work_dir:
+    value: /home/lug15gew/Desktop/thesis/popec/logs/cheetah-run/1/default

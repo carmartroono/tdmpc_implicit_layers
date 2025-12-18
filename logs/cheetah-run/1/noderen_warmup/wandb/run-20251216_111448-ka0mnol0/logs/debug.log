@@ -1,0 +1,47 @@
+2025-12-16 11:14:48,076 INFO    MainThread:589534 [wandb_setup.py:_flush():81] Current SDK version is 0.22.1
+2025-12-16 11:14:48,076 INFO    MainThread:589534 [wandb_setup.py:_flush():81] Configure stats pid to 589534
+2025-12-16 11:14:48,076 INFO    MainThread:589534 [wandb_setup.py:_flush():81] Loading settings from /home/lug15gew/.config/wandb/settings
+2025-12-16 11:14:48,077 INFO    MainThread:589534 [wandb_setup.py:_flush():81] Loading settings from /home/lug15gew/Desktop/thesis/popec/outputs/2025-12-16/11-14-44/wandb/settings
+2025-12-16 11:14:48,077 INFO    MainThread:589534 [wandb_setup.py:_flush():81] Loading settings from environment variables
+2025-12-16 11:14:48,077 INFO    MainThread:589534 [wandb_init.py:setup_run_log_directory():705] Logging user logs to /home/lug15gew/Desktop/thesis/popec/logs/cheetah-run/1/noderen_warmup/wandb/run-20251216_111448-ka0mnol0/logs/debug.log
+2025-12-16 11:14:48,077 INFO    MainThread:589534 [wandb_init.py:setup_run_log_directory():706] Logging internal logs to /home/lug15gew/Desktop/thesis/popec/logs/cheetah-run/1/noderen_warmup/wandb/run-20251216_111448-ka0mnol0/logs/debug-internal.log
+2025-12-16 11:14:48,077 INFO    MainThread:589534 [wandb_init.py:init():832] calling init triggers
+2025-12-16 11:14:48,077 INFO    MainThread:589534 [wandb_init.py:init():837] wandb.init called with sweep_config: {}
+config: {'task': 'cheetah-run', 'obs': 'state', 'episodic': False, 'checkpoint': '???', 'eval_episodes': 10, 'eval_freq': 5000, 'steps': 5000000, 'batch_size': 256, 'reward_coef': 0.1, 'value_coef': 0.1, 'termination_coef': 1, 'consistency_coef': 5, 'rho': 0.5, 'lr': 0.0003, 'enc_lr_scale': 0.3, 'grad_clip_norm': 10, 'tau': 0.01, 'discount_denom': 5, 'discount_min': 0.95, 'discount_max': 0.995, 'buffer_size': 400000, 'exp_name': 'noderen_warmup', 'data_dir': '???', 'mpc': True, 'iterations': 6, 'num_samples': 512, 'num_elites': 64, 'num_pi_trajs': 24, 'horizon': 3, 'min_std': 0.05, 'max_std': 2, 'temperature': 0.5, 'log_std_min': -10, 'log_std_max': 2, 'entropy_coef': 0.0001, 'num_bins': 101, 'vmin': -10, 'vmax': 10, 'model_size': '???', 'num_enc_layers': 2, 'enc_dim': 256, 'num_channels': 32, 'mlp_dim': 512, 'latent_dim': 512, 'task_dim': 0, 'num_q': 5, 'dropout': 0.01, 'simnorm_dim': 8, 'deq_f_max_iter': 20, 'deq_b_max_iter': 20, 'deq_f_tol': 0.0005, 'deq_b_tol': 0.0001, 'deq_f_solver': 'anderson', 'deq_b_solver': 'broyden', 'deq_num_layers': 2, 'deq_dropout': 0.05, 'deq_mlp_norm_type': 'layer', 'deq_cnn_norm_type': 'none', 'deq_log_stats': True, 'deq_log_every_n_steps': 100, 'deq_lam': 1, 'deq_tau': 1, 'noderen_nq': 32, 'noderen_sigma': 'tanh', 'noderen_epsilon': 0.1, 'noderen_bias': True, 'noderen_alpha': 0.1, 'noderen_linear_output': False, 'noderen_dt': 0.05, 'noderen_method': 'euler', 'noderen_step_size': 0.025, 'noderen_rtol': 1e-05, 'noderen_atol': 1e-07, 'noderen_lr_scale': 0.5, 'noderen_warmup_steps': 10000, 'noderen_update_freq': 10, 'wandb_project': 'tdmpc2_noderen_warmup', 'wandb_entity': 'carmartroono-rptu', 'wandb_silent': False, 'enable_wandb': True, 'save_csv': True, 'compile': False, 'save_video': True, 'save_agent': True, 'seed': 1, 'work_dir': PosixPath('/home/lug15gew/Desktop/thesis/popec/logs/cheetah-run/1/noderen_warmup'), 'task_title': 'Cheetah Run', 'multitask': False, 'tasks': ['cheetah-run'], 'obs_shape': {'state': (17,)}, 'action_dim': 6, 'episode_length': 500, 'obs_shapes': '???', 'action_dims': '???', 'episode_lengths': '???', 'seed_steps': 2500, 'bin_size': 0.2, '_wandb': {}}
+2025-12-16 11:14:48,077 INFO    MainThread:589534 [wandb_init.py:init():880] starting backend
+2025-12-16 11:14:48,304 INFO    MainThread:589534 [wandb_init.py:init():883] sending inform_init request
+2025-12-16 11:14:48,313 INFO    MainThread:589534 [wandb_init.py:init():891] backend started and connected
+2025-12-16 11:14:48,316 INFO    MainThread:589534 [wandb_init.py:init():961] updated telemetry
+2025-12-16 11:14:48,331 INFO    MainThread:589534 [wandb_init.py:init():985] communicating run to backend with 90.0 second timeout
+2025-12-16 11:14:49,086 INFO    MainThread:589534 [wandb_init.py:init():1036] starting run threads in backend
+2025-12-16 11:14:49,467 INFO    MainThread:589534 [wandb_run.py:_console_start():2506] atexit reg
+2025-12-16 11:14:49,467 INFO    MainThread:589534 [wandb_run.py:_redirect():2354] redirect: wrap_raw
+2025-12-16 11:14:49,468 INFO    MainThread:589534 [wandb_run.py:_redirect():2423] Wrapping output streams.
+2025-12-16 11:14:49,468 INFO    MainThread:589534 [wandb_run.py:_redirect():2446] Redirects installed.
+2025-12-16 11:14:49,476 INFO    MainThread:589534 [wandb_init.py:init():1076] run started, returning control to user process
+2025-12-16 11:18:12,159 ERROR   wandb-AsyncioManager-main:589534 [redirect.py:_on_write():664] [all runs] error in stderr callback
+Traceback (most recent call last):
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/lib/redirect.py", line 662, in _on_write
+    cb(written_data)
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 2433, in <lambda>
+    lambda data: self._console_raw_callback("stderr", data),
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 399, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 457, in wrapper_fn
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 1595, in _console_raw_callback
+    self._backend.interface.publish_output_raw(name, data)
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/interface/interface.py", line 802, in publish_output_raw
+    self._publish_output_raw(o)
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/interface/interface_shared.py", line 37, in _publish_output_raw
+    self._publish(rec)
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/interface/interface_sock.py", line 43, in _publish
+    self._asyncer.run(lambda: self._client.publish(request))
+  File "/home/lug15gew/Desktop/thesis/.venv/lib/python3.12/site-packages/wandb/sdk/lib/asyncio_manager.py", line 131, in run
+    raise ValueError("Cannot use run() inside async loop.")
+ValueError: Cannot use run() inside async loop.
+2025-12-16 11:47:15,498 INFO    wandb-AsyncioManager-main:589534 [service_client.py:_forward_responses():80] Reached EOF.
+2025-12-16 11:47:15,498 INFO    wandb-AsyncioManager-main:589534 [mailbox.py:close():137] Closing mailbox, abandoning 1 handles.

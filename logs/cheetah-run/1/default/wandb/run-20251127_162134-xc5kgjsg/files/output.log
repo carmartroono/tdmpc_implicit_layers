@@ -1,0 +1,69 @@
+Logs will be synced with wandb.
+Architecture: TD-MPC2 World Model
+Encoder: ModuleDict(
+  (state): DEQ_MLP(
+    (act): GELU(approximate='none')
+    (input_proj): Sequential(
+      (0): Linear(in_features=17, out_features=256, bias=True)
+      (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+      (2): GELU(approximate='none')
+    )
+    (deq_func): DEQFunc(
+      (layers): Sequential(
+        (0): Linear(in_features=256, out_features=256, bias=True)
+        (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (2): GELU(approximate='none')
+        (3): Dropout(p=0.05, inplace=False)
+        (4): Linear(in_features=256, out_features=256, bias=True)
+        (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+        (6): GELU(approximate='none')
+      )
+    )
+    (output_proj): Sequential(
+      (0): Linear(in_features=256, out_features=512, bias=True)
+      (1): LayerNorm((512,), eps=1e-05, elementwise_affine=True)
+    )
+    (skip_proj): Linear(in_features=17, out_features=512, bias=True)
+    (deq): DEQSliced()
+  )
+)
+Dynamics: Sequential(
+  (0): NormedLinear(in_features=518, out_features=512, bias=True, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): NormedLinear(in_features=512, out_features=512, bias=True, act=SimNorm)
+)
+Reward: Sequential(
+  (0): NormedLinear(in_features=518, out_features=512, bias=True, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): Linear(in_features=512, out_features=101, bias=True)
+)
+Policy prior: Sequential(
+  (0): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): Linear(in_features=512, out_features=12, bias=True)
+)
+Q-functions: Vectorized 5x Sequential(
+  (0): NormedLinear(in_features=518, out_features=512, bias=True, dropout=0.01, act=Mish)
+  (1): NormedLinear(in_features=512, out_features=512, bias=True, act=Mish)
+  (2): Linear(in_features=512, out_features=101, bias=True)
+)
+Learnable parameters: 5,100,652
+Buffer capacity: 400,000
+Storage required: 0.04 GB
+Using CUDA:0 memory for storage.
+Pretraining agent on seed data...
+[DEQ Stats @ 100] Norm: layer, Iters: 13.8, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 200] Norm: layer, Iters: 13.8, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 300] Norm: layer, Iters: 13.9, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 400] Norm: layer, Iters: 14.3, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 500] Norm: layer, Iters: 14.5, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 600] Norm: layer, Iters: 14.6, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 700] Norm: layer, Iters: 14.8, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 800] Norm: layer, Iters: 14.9, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 900] Norm: layer, Iters: 14.9, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 1000] Norm: layer, Iters: 14.9, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 1100] Norm: layer, Iters: 15.0, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 1200] Norm: layer, Iters: 15.1, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 1300] Norm: layer, Iters: 15.1, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 1400] Norm: layer, Iters: 15.1, Residual: 0.00e+00, Conv Rate: 100.00%
+[DEQ Stats @ 1500] Norm: layer, Iters: 14.9, Residual: 0.00e+00, Conv Rate: 100.00%

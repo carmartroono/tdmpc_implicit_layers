@@ -1,0 +1,7 @@
+{"time":"2025-12-11T13:41:26.505189808+01:00","level":"INFO","msg":"stream: starting","core version":"0.22.1"}
+{"time":"2025-12-11T13:41:26.936662012+01:00","level":"INFO","msg":"stream: created new stream","id":"ivf683r9"}
+{"time":"2025-12-11T13:41:26.93670675+01:00","level":"INFO","msg":"handler: started","stream_id":"ivf683r9"}
+{"time":"2025-12-11T13:41:26.938372006+01:00","level":"INFO","msg":"stream: started","id":"ivf683r9"}
+{"time":"2025-12-11T13:41:26.938375194+01:00","level":"INFO","msg":"writer: started","stream_id":"ivf683r9"}
+{"time":"2025-12-11T13:41:26.938387524+01:00","level":"INFO","msg":"sender: started","stream_id":"ivf683r9"}
+{"time":"2025-12-12T02:01:42.965482889+01:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/graphql\": context deadline exceeded"}

@@ -1,0 +1,14 @@
+{"time":"2025-12-02T17:41:52.6676729+01:00","level":"INFO","msg":"stream: starting","core version":"0.22.1"}
+{"time":"2025-12-02T17:41:52.980859556+01:00","level":"INFO","msg":"stream: created new stream","id":"kxg7pgrp"}
+{"time":"2025-12-02T17:41:52.980955692+01:00","level":"INFO","msg":"handler: started","stream_id":"kxg7pgrp"}
+{"time":"2025-12-02T17:41:52.983357149+01:00","level":"INFO","msg":"stream: started","id":"kxg7pgrp"}
+{"time":"2025-12-02T17:41:52.983370835+01:00","level":"INFO","msg":"writer: started","stream_id":"kxg7pgrp"}
+{"time":"2025-12-02T17:41:52.983370862+01:00","level":"INFO","msg":"sender: started","stream_id":"kxg7pgrp"}
+{"time":"2025-12-03T00:12:53.943311516+01:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/carmartroono-rptu/tdmpc2_noderen_warmup/kxg7pgrp/file_stream","body":"\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>502 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"}
+{"time":"2025-12-03T00:13:56.204264628+01:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/carmartroono-rptu/tdmpc2_noderen_warmup/kxg7pgrp/file_stream","body":"\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>502 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"}
+{"time":"2025-12-03T02:13:08.834886503+01:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/graphql\": context deadline exceeded"}
+{"time":"2025-12-03T03:07:52.817194931+01:00","level":"INFO","msg":"stream: closing","id":"kxg7pgrp"}
+{"time":"2025-12-03T03:07:53.434518952+01:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-12-03T03:07:53.674724517+01:00","level":"INFO","msg":"handler: closed","stream_id":"kxg7pgrp"}
+{"time":"2025-12-03T03:07:53.676241669+01:00","level":"INFO","msg":"sender: closed","stream_id":"kxg7pgrp"}
+{"time":"2025-12-03T03:07:53.676249676+01:00","level":"INFO","msg":"stream: closed","id":"kxg7pgrp"}
