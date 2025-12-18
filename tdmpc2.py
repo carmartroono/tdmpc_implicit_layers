@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from common import math
 from common.scale import RunningScale
 from common.world_model import WorldModel
-from common.layers import api_model_conversion,get_deq_metrics
+from common.layers import api_model_conversion
 from tensordict import TensorDict
 import os
 os.environ["HYDRA_FULL_ERROR"] = "1"
@@ -268,40 +268,17 @@ class TDMPC2(torch.nn.Module):
 		self.model.train()
 
 		# Latent rollout
-		zs = torch.empty(self.cfg.horizon + 1, self.cfg.batch_size, self.cfg.latent_dim, device=self.device)
+		zs = torch.empty(self.cfg.horizon+1, self.cfg.batch_size, self.cfg.latent_dim, device=self.device)
 		z = self.model.encode(obs[0], task)
 		zs[0] = z
 		consistency_loss = 0
-
-		# НОВОЕ: Отслеживание метрик NODE-REN
-		noderen_metrics = {
-			'max_xdot_norm': 0.0,
-			'mean_z_change': 0.0,
-			'integration_failures': 0
-		}
-
 		for t, (_action, _next_z) in enumerate(zip(action.unbind(0), next_z.unbind(0))):
-			z_prev = z.clone()
 			z = self.model.next(z, _action, task)
-
-			# НОВОЕ: Отслеживание изменений
-			z_change = torch.norm(z - z_prev, dim=-1).mean().item()
-			noderen_metrics['mean_z_change'] += z_change / self.cfg.horizon
-
-			# НОВОЕ: Детектирование проблем
-			if torch.isnan(z).any() or torch.isinf(z).any():
-				noderen_metrics['integration_failures'] += 1
-				z = torch.nan_to_num(z, nan=0.0, posinf=10.0, neginf=-10.0)
-
-			consistency_loss = consistency_loss + F.mse_loss(z, _next_z) * self.cfg.rho ** t
-			zs[t + 1] = z
-
+			consistency_loss = consistency_loss + F.mse_loss(z, _next_z) * self.cfg.rho**t
+			zs[t+1] = z
 		z_norms = torch.stack([torch.norm(z, dim=-1).mean() for z in zs])
-		noderen_metrics['max_xdot_norm'] = z_norms.max().item()
-
 		if (z_norms > 50).any():
 			print(f"WARNING: Large latent norms detected: {z_norms.max().item():.2f}")
-
 		# Predictions
 		_zs = zs[:-1]
 		qs = self.model.Q(_zs, action, task, return_type='all')
@@ -311,13 +288,10 @@ class TDMPC2(torch.nn.Module):
 
 		# Compute losses
 		reward_loss, value_loss = 0, 0
-		for t, (rew_pred_unbind, rew_unbind, td_targets_unbind, qs_unbind) in enumerate(
-				zip(reward_preds.unbind(0), reward.unbind(0), td_targets.unbind(0), qs.unbind(1))
-		):
-			reward_loss = reward_loss + math.soft_ce(rew_pred_unbind, rew_unbind, self.cfg).mean() * self.cfg.rho ** t
+		for t, (rew_pred_unbind, rew_unbind, td_targets_unbind, qs_unbind) in enumerate(zip(reward_preds.unbind(0), reward.unbind(0), td_targets.unbind(0), qs.unbind(1))):
+			reward_loss = reward_loss + math.soft_ce(rew_pred_unbind, rew_unbind, self.cfg).mean() * self.cfg.rho**t
 			for _, qs_unbind_unbind in enumerate(qs_unbind.unbind(0)):
-				value_loss = value_loss + math.soft_ce(qs_unbind_unbind, td_targets_unbind,
-													   self.cfg).mean() * self.cfg.rho ** t
+				value_loss = value_loss + math.soft_ce(qs_unbind_unbind, td_targets_unbind, self.cfg).mean() * self.cfg.rho**t
 
 		consistency_loss = consistency_loss / self.cfg.horizon
 		reward_loss = reward_loss / self.cfg.horizon
@@ -326,34 +300,15 @@ class TDMPC2(torch.nn.Module):
 		else:
 			termination_loss = 0.
 		value_loss = value_loss / (self.cfg.horizon * self.cfg.num_q)
-
-		# НОВОЕ: Регуляризация NODE-REN
-		noderen_reg = 0.0
-		if hasattr(self.cfg, 'noderen_weight_decay') and self.cfg.noderen_weight_decay > 0:
-			for param in self.model._dynamics.parameters():
-				noderen_reg += torch.sum(param ** 2)
-			noderen_reg = self.cfg.noderen_weight_decay * noderen_reg
-
 		total_loss = (
-				self.cfg.consistency_coef * consistency_loss +
-				self.cfg.reward_coef * reward_loss +
-				self.cfg.termination_coef * termination_loss +
-				self.cfg.value_coef * value_loss +
-				noderen_reg
+			self.cfg.consistency_coef * consistency_loss +
+			self.cfg.reward_coef * reward_loss +
+			self.cfg.termination_coef * termination_loss +
+			self.cfg.value_coef * value_loss
 		)
 
 		# Update model
 		total_loss.backward()
-
-		# НОВОЕ: Специальное клиппирование для NODE-REN
-		if hasattr(self.cfg, 'noderen_grad_clip'):
-			noderen_grad_norm = torch.nn.utils.clip_grad_norm_(
-				self.model._dynamics.parameters(),
-				self.cfg.noderen_grad_clip
-			)
-		else:
-			noderen_grad_norm = 0.0
-
 		grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.cfg.grad_clip_norm)
 		self.optim.step()
 		self.optim.zero_grad(set_to_none=True)
@@ -364,6 +319,7 @@ class TDMPC2(torch.nn.Module):
 		# Update target Q-functions
 		self.model.soft_update_target_Q()
 
+
 		# Return training statistics
 		self.model.eval()
 		info = TensorDict({
@@ -373,26 +329,14 @@ class TDMPC2(torch.nn.Module):
 			"termination_loss": termination_loss,
 			"total_loss": total_loss,
 			"grad_norm": grad_norm,
-			"noderen_reg": noderen_reg,
-			"noderen_grad_norm": noderen_grad_norm,
 		})
-
-		deq_metrics = get_deq_metrics(self.model)
-		info.update(deq_metrics)
-		# НОВОЕ: Добавляем метрики NODE-REN
 		info.update({
 			"max_z_norm": z_norms.max(),
 			"mean_z_norm": z_norms.mean(),
 			"dynamics_nfe": float(self.model._dynamics.nfe if hasattr(self.model._dynamics, 'nfe') else 0),
-			"noderen_warmup_progress": self.model._get_noderen_warmup_scale(),
-			"noderen_step": float(self.model.current_step),
-			"noderen_max_xdot": noderen_metrics['max_xdot_norm'],
-			"noderen_mean_z_change": noderen_metrics['mean_z_change'],
-			"noderen_integration_failures": float(noderen_metrics['integration_failures']),
-			"noderen_adaptive_dt": float(self.model.adaptive_dt) if hasattr(self.model,
-																			'adaptive_dt') else self.cfg.noderen_dt,
+			"noderen_warmup_progress": self.model._get_noderen_warmup_scale(),  # Already float
+			"noderen_step": float(self.model.current_step),  # Cast to float
 		})
-
 		if self.cfg.episodic:
 			info.update(math.termination_statistics(torch.sigmoid(termination_pred[-1]), terminated[-1]))
 		info.update(pi_info)

@@ -76,31 +76,24 @@ deq_mlp_norm_type: 'layer'
 deq_cnn_norm_type: 'none'
 deq_log_stats: true
 deq_log_every_n_steps: 100
-deq_lam: 0.1
+deq_lam: 1.0
 deq_tau: 1.0
 
-
-
-# NODE-REN параметры - ОПТИМИЗИРОВАННЫЕ
-noderen_nq: 8
+noderen_nq: 64
 noderen_sigma: 'tanh'
-noderen_epsilon: 0.01  # Уменьшил с 0.1 - лучше для стабильности
+noderen_epsilon: 0.1
 noderen_bias: true
-noderen_alpha: 0.05  # Уменьшил с 0.1 - менее агрессивная контракция
+noderen_alpha: 0.1
 noderen_linear_output: false
-noderen_dt: 0.01  # Уменьшил с 0.05 - ключевое изменение!
-noderen_method: 'dopri5'  # Adaptive solver вместо euler
-noderen_step_size: 0.005  # Меньше для стабильности
-noderen_rtol: 1.0e-4  # Менее строгий для скорости
-noderen_atol: 1.0e-6
-noderen_lr_scale: 0.1  # Очень низкий LR для NODE-REN!
-noderen_warmup_steps: 20000  # Увеличил с 5000
-noderen_weight_decay: 1e-4  # Для параметров NODE-REN
-noderen_spectral_norm: true  # Спектральная нормализация
-noderen_grad_clip: 1.0  # Отдельно от общего grad_clip_norm
 
-# Частота обновления
-noderen_update_freq: 1  # Обновлять каждый шаг, а не каждые 10!
+noderen_dt: 0.05
+noderen_method: 'euler'
+noderen_step_size: 0.025
+noderen_rtol: 1.0e-5
+noderen_atol: 1.0e-7
+noderen_lr_scale: 0.5
+noderen_warmup_steps: 25000
+noderen_update_freq: 10
 
 # logging
 wandb_project: tdmpc2_noderen_warmup

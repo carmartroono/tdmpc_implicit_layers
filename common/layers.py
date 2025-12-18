@@ -549,17 +549,15 @@ class DEQConvFunc(nn.Module):
         layers = []
         for i in range(num_layers):
             conv = nn.Conv2d(num_channels, num_channels, kernel_size=3, padding=1)
-            # НОВОЕ: Spectral normalization
             conv = nn.utils.spectral_norm(conv)
             layers.append(conv)
 
-            # ИЗМЕНЕНИЕ: Выбор типа нормализации
             if norm_type == 'batch':
                 layers.append(nn.BatchNorm2d(num_channels))
             elif norm_type == 'instance':
                 layers.append(nn.InstanceNorm2d(num_channels))
             elif norm_type == 'none':
-                pass  # Без нормализации
+                pass
             else:
                 raise ValueError(f"Unknown norm_type: {norm_type}. Use 'batch', 'instance', or 'none'.")
 
@@ -567,15 +565,14 @@ class DEQConvFunc(nn.Module):
 
         self.layers = nn.Sequential(*layers)
 
-        # ИЗМЕНЕНИЕ: Более консервативная alpha
-        self.alpha = nn.Parameter(torch.ones(1) * 0.01)  # было 0.05
+        self.alpha = nn.Parameter(torch.ones(1) * 0.01)  #
 
         self._init_weights()
 
     def _init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                # ИЗМЕНЕНИЕ: Меньший gain
+                # Ð˜Ð—ÐœÐ•ÐÐ•ÐÐ˜Ð•: ÐœÐµÐ½ÑŒÑˆÐ¸Ð¹ gain
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu', a=0.05)
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
@@ -609,14 +606,13 @@ class DEQ_CNN(nn.Module):
         self.deq_lam = deq_lam
         self.deq_tau = deq_tau
 
-        # НОВОЕ: Warm-up
+        # ÐÐžÐ’ÐžÐ•: Warm-up
         self.warmup_steps = 1000
         self.current_step = 0
 
         self.stats = DEQStats()
         self.step_counter = 0
 
-        # Helper function для создания нормализации
         def get_norm_layer(channels):
             if norm_type == 'batch':
                 return nn.BatchNorm2d(channels)
@@ -782,7 +778,7 @@ def enc_deq(cfg, out={}):
                 # Logging
                 log_stats=getattr(cfg, 'deq_log_stats', True),
                 log_every_n_steps=getattr(cfg, 'deq_log_every_n_steps', 100),
-                deq_lam=getattr(cfg, 'deq_lam', 0.1),
+                deq_lam=getattr(cfg, 'deq_tau', 0.1),
                 deq_tau=getattr(cfg, 'deq_tau', 1.0)
             )
         elif k == 'rgb':
@@ -800,7 +796,7 @@ def enc_deq(cfg, out={}):
                 b_solver=getattr(cfg, 'deq_b_solver', 'anderson'),
                 # Architecture improvements
                 deq_num_layers=getattr(cfg, 'deq_num_layers', 2),
-                norm_type=getattr(cfg, 'deq_cnn_norm_type', 'batch'),  # НОВОЕ: параметр нормализации
+                norm_type=getattr(cfg, 'deq_cnn_norm_type', 'batch'),  # ÐÐžÐ’ÐžÐ•: Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€ Ð½Ð¾Ñ€Ð¼Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ð¸
                 # Logging
                 log_stats=getattr(cfg, 'deq_log_stats', True),
                 log_every_n_steps=getattr(cfg, 'deq_log_every_n_steps', 100),

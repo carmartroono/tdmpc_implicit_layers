@@ -37,7 +37,7 @@ class WorldModel(nn.Module):
             linear_output=cfg.noderen_linear_output
         )
 
-        # НОВОЕ: Параметры warmup и update scheduling для NODE-REN
+        # ÐÐžÐ’ÐžÐ•: ÐŸÐ°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ñ‹ warmup Ð¸ update scheduling Ð´Ð»Ñ NODE-REN
         self.noderen_warmup_steps = getattr(cfg, 'noderen_warmup_steps', 5000)
         self.current_step = 0
 
@@ -139,67 +139,53 @@ class WorldModel(nn.Module):
                     reset_norm(encoder.deq_func)
 
     def _get_noderen_warmup_scale(self):
-        """
-        Возвращает масштабирующий коэффициент для NODE-REN во время warmup.
 
-        Returns:
-            float: коэффициент от 0.0 до 1.0
-        """
         if self.current_step >= self.noderen_warmup_steps:
             return 1.0
 
-        # Линейный warmup
+        # Ð›Ð¸Ð½ÐµÐ¹Ð½Ñ‹Ð¹ warmup
         warmup_progress = self.current_step / self.noderen_warmup_steps
         return warmup_progress
 
     def next(self, z, a, task):
         """
         Predicts the next latent state given the current latent state and action.
-        С warmup и оптимизированными вызовами updateParameters.
         """
         if self.cfg.multitask:
             z = self.task_emb(z, task)
 
-        # Формируем управление
         u = torch.cat([
             a,
             self.task_emb(torch.zeros_like(z[:, :1]), task) if self.cfg.multitask
             else torch.zeros(z.shape[0], self.cfg.task_dim, device=z.device)
         ], dim=-1)
 
-        # НОВОЕ: Warmup scaling
         warmup_scale = self._get_noderen_warmup_scale()
 
-        # Защита от взрыва состояния
         with torch.no_grad():
             z_norm = torch.norm(z, dim=-1, keepdim=True)
             if (z_norm > 100).any():
                 z = z / (z_norm / 10.0 + 1e-8)
 
         if self.cfg.noderen_method == 'euler':
-            # Простой метод Эйлера - самый стабильный
             xdot = self._dynamics(0.0, z, u)
 
-            # НОВОЕ: Применяем warmup scaling
             if warmup_scale < 1.0:
-                # Во время warmup уменьшаем влияние NODE-REN
                 z_next = z + warmup_scale * self.cfg.noderen_dt * xdot
             else:
                 z_next = z + self.cfg.noderen_dt * xdot
 
         else:
-            # Более сложные методы - с защитой
             time_span = torch.tensor([0.0, self.cfg.noderen_dt], device=z.device)
 
             def dynamics_func(t, state):
-                # Защита от взрыва внутри ODE
+                # Ð—Ð°Ñ‰Ð¸Ñ‚Ð° Ð¾Ñ‚ Ð²Ð·Ñ€Ñ‹Ð²Ð° Ð²Ð½ÑƒÑ‚Ñ€Ð¸ ODE
                 state_norm = torch.norm(state, dim=-1, keepdim=True)
                 if (state_norm > 100).any():
                     state = state / (state_norm / 10.0 + 1e-8)
 
                 xdot = self._dynamics(t, state, u)
 
-                # НОВОЕ: Применяем warmup scaling
                 if warmup_scale < 1.0:
                     return warmup_scale * xdot
                 return xdot
@@ -227,11 +213,9 @@ class WorldModel(nn.Module):
                 else:
                     z_next = z + self.cfg.noderen_dt * xdot
 
-        # Предотвращение NaN/Inf
         z_next = torch.nan_to_num(z_next, nan=0.0, posinf=10.0, neginf=-10.0)
         z_next = torch.clamp(z_next, min=-10.0, max=10.0)
 
-        # Увеличиваем счетчик шагов
         if self.training:
             self.current_step += 1
 
