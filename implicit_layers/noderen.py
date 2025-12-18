@@ -186,7 +186,6 @@ class _System_contractive(nn.Module):
 class NODE_REN(nn.Module):
     def __init__(self, nx, ny, nu, nq, sigma="tanh", epsilon=1.0e-2, device="cpu", bias=False, alpha=0.0,
                  linear_output=False):
-        """NODE_REN без встроенного контроллера для использования с внешним управлением."""
         super().__init__()
         self.nfe = 0
         self.sys = _System_contractive(nx, ny, nu, nq, sigma, epsilon, device=device, bias=bias,
@@ -194,7 +193,6 @@ class NODE_REN(nn.Module):
 
     def forward(self, t, x, u):
         self.nfe += 1
-        # Обработка NaN/Inf
         if torch.isnan(x).any() or torch.isinf(x).any():
             x = torch.nan_to_num(x, nan=0.0, posinf=1e6, neginf=-1e6)
         if torch.isnan(u).any() or torch.isinf(u).any():
@@ -202,14 +200,11 @@ class NODE_REN(nn.Module):
 
         xdot = self.sys(t, x, u)
 
-        # НОВОЕ: Клиппинг градиентов производной
         xdot = torch.clamp(xdot, min=-10.0, max=10.0)
         xdot = torch.nan_to_num(xdot, nan=0.0, posinf=1e6, neginf=-1e6)
         return xdot
 
     def output(self, x, u):
-        """Вычисление выхода без временной зависимости."""
-        # Обработка NaN/Inf
         if torch.isnan(x).any() or torch.isinf(x).any():
             x = torch.nan_to_num(x, nan=0.0, posinf=1e6, neginf=-1e6)
         if torch.isnan(u).any() or torch.isinf(u).any():
