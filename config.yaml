@@ -69,7 +69,7 @@ deq_b_max_iter: 20
 deq_f_tol: 1e-4
 deq_b_tol: 1e-5
 deq_f_solver: 'anderson'
-deq_b_solver: 'broyden'
+deq_b_solver: 'broyden'     #тоже anderson попорбовать
 deq_num_layers: 2
 deq_dropout: 0.05
 deq_mlp_norm_type: 'layer'
@@ -86,13 +86,13 @@ noderen_bias: true
 noderen_alpha: 0.1
 noderen_linear_output: false
 
-noderen_dt: 0.05
+noderen_dt: 0.01
 noderen_method: 'euler'
-noderen_step_size: 0.025
+noderen_step_size: 0.005
 noderen_rtol: 1.0e-5
 noderen_atol: 1.0e-7
-noderen_lr_scale: 0.5
-noderen_warmup_steps: 25000
+noderen_lr_scale: 0.25
+noderen_warmup_steps: 50_000
 noderen_update_freq: 10
 
 # logging

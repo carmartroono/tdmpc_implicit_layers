@@ -179,7 +179,6 @@ class WorldModel(nn.Module):
             time_span = torch.tensor([0.0, self.cfg.noderen_dt], device=z.device)
 
             def dynamics_func(t, state):
-                # Ð—Ð°Ñ‰Ð¸Ñ‚Ð° Ð¾Ñ‚ Ð²Ð·Ñ€Ñ‹Ð²Ð° Ð²Ð½ÑƒÑ‚Ñ€Ð¸ ODE
                 state_norm = torch.norm(state, dim=-1, keepdim=True)
                 if (state_norm > 100).any():
                     state = state / (state_norm / 10.0 + 1e-8)

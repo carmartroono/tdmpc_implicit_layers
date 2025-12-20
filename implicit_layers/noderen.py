@@ -200,7 +200,7 @@ class NODE_REN(nn.Module):
 
         xdot = self.sys(t, x, u)
 
-        xdot = torch.clamp(xdot, min=-10.0, max=10.0)
+        #xdot = torch.clamp(xdot, min=-10.0, max=10.0)
         xdot = torch.nan_to_num(xdot, nan=0.0, posinf=1e6, neginf=-1e6)
         return xdot
 
