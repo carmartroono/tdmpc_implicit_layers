@@ -1,36 +1,26 @@
-defaults:
-    - override hydra/launcher: submitit_local
-
-# environment
 task: cheetah-run
 obs: state
 episodic: false
-
-# evaluation
 checkpoint: ???
 eval_episodes: 10
 eval_freq: 5000
-
-# training
-steps: 5_000_000
+steps: 5000000
 batch_size: 256
 reward_coef: 0.1
 value_coef: 0.1
 termination_coef: 1
 consistency_coef: 5
 rho: 0.5
-lr: 3e-4
+lr: 0.0003
 enc_lr_scale: 0.3
 grad_clip_norm: 20
 tau: 0.01
 discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
-buffer_size: 400_000
+buffer_size: 400000
 exp_name: noderen_warmup
 data_dir: ???
-
-# planning
 mpc: true
 iterations: 6
 num_samples: 512
@@ -40,18 +30,12 @@ horizon: 3
 min_std: 0.05
 max_std: 2
 temperature: 0.5
-
-# actor
 log_std_min: -10
 log_std_max: 2
-entropy_coef: 1e-4
-
-# critic
+entropy_coef: 0.0001
 num_bins: 101
 vmin: -10
-vmax: +10
-
-# architecture
+vmax: 10
 model_size: ???
 num_enc_layers: 2
 enc_dim: 256
@@ -62,53 +46,43 @@ task_dim: 96
 num_q: 5
 dropout: 0.01
 simnorm_dim: 8
-
-# DEQ hyperparameters - STABLE
 deq_f_max_iter: 20
 deq_b_max_iter: 20
-deq_f_tol: 1e-4
-deq_b_tol: 1e-5
-deq_f_solver: 'anderson'
-deq_b_solver: 'broyden'     #тоже anderson попорбовать
+deq_f_tol: 0.0001
+deq_b_tol: 1.0e-05
+deq_f_solver: anderson
+deq_b_solver: broyden
 deq_num_layers: 2
 deq_dropout: 0.05
-deq_mlp_norm_type: 'layer'
-deq_cnn_norm_type: 'none'
+deq_mlp_norm_type: layer
+deq_cnn_norm_type: none
 deq_log_stats: true
 deq_log_every_n_steps: 100
 deq_lam: 1.0
 deq_tau: 1.0
-
 noderen_nq: 64
-noderen_sigma: 'tanh'
+noderen_sigma: tanh
 noderen_epsilon: 0.05
 noderen_bias: true
 noderen_alpha: 0.1
 noderen_linear_output: false
-
 noderen_dt: 0.1
-noderen_method: 'euler'
+noderen_method: euler
 noderen_step_size: 0.025
-noderen_rtol: 1.0e-5
-noderen_atol: 1.0e-7
+noderen_rtol: 1.0e-05
+noderen_atol: 1.0e-07
 noderen_lr_scale: 0.25
-noderen_warmup_steps: 50_000
+noderen_warmup_steps: 50000
 noderen_update_freq: 10
-
-# logging
 wandb_project: tdmpc2_noderen_warmup
 wandb_entity: carmartroono-rptu
 wandb_silent: false
 enable_wandb: true
 save_csv: true
-
-# misc
 compile: false
 save_video: true
 save_agent: true
 seed: 1
-
-# convenience
 work_dir: ???
 task_title: ???
 multitask: ???

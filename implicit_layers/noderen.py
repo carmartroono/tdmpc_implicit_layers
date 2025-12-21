@@ -3,6 +3,7 @@ import torch.nn.functional as F
 from torch import nn
 import numpy as np
 
+
 class _System_contractive(nn.Module):
     def __init__(self, nx, ny, nu, nq, sigma, epsilon, device, bias=False, alpha=0.0, linear_output=False):
         """Used by the upper class NODE_REN to guarantee contractivity to the model. It should not be used by itself.
@@ -26,22 +27,26 @@ class _System_contractive(nn.Module):
         self.nq = nq  # no. non-linear states
         self.epsilon = epsilon
         self.device = device
-        std = 1 / np.sqrt(nx)  # Changed initialization std for better conditioning
+        std = 1 / np.sqrt(nx)
+
         # Initialization of the Free Matrices:
         self.Pstar = nn.Parameter(torch.randn(nx, nx, device=device) * std)
         self.Chi = nn.Parameter(torch.randn(nx, nq, device=device) * std)
+
         # Initialization of the Weights:
         self.Y1 = nn.Parameter(torch.randn(nx, nx, device=device) * std)
         self.B2 = nn.Parameter(torch.randn(nx, nu, device=device) * std)
         self.D12 = nn.Parameter(torch.randn(nq, nu, device=device) * std)
         self.C2 = nn.Parameter(torch.randn(ny, nx, device=device) * std)
-        if (linear_output):
+
+        if linear_output:
             self.D21 = torch.zeros(ny, nq, device=device)
         else:
             self.D21 = nn.Parameter(torch.randn(ny, nq, device=device) * std)
         self.D22 = nn.Parameter(torch.randn(ny, nu, device=device) * std)
+
         BIAS = bias
-        if (BIAS):
+        if BIAS:
             self.bx = nn.Parameter(torch.randn(nx, 1, device=device) * std)
             self.bv = nn.Parameter(torch.randn(nq, 1, device=device) * std)
             self.by = nn.Parameter(torch.randn(ny, 1, device=device) * std)
@@ -49,17 +54,18 @@ class _System_contractive(nn.Module):
             self.bx = torch.zeros(nx, 1, device=device)
             self.bv = torch.zeros(nq, 1, device=device)
             self.by = torch.zeros(ny, 1, device=device)
-        self.X = nn.Parameter(
-            torch.randn(nx + nq, nx + nq, device=device) * std)  # REMEMBER TO CHANGE IT FOR ROBUST SYSTEMS
+
+        self.X = nn.Parameter(torch.randn(nx + nq, nx + nq, device=device) * std)
         self.alpha = alpha
+
         # Choosing the activation function:
-        if (sigma == "tanh"):
+        if sigma == "tanh":
             self.act = nn.Tanh()
-        elif (sigma == "sigmoid"):
+        elif sigma == "sigmoid":
             self.act = nn.Sigmoid()
-        elif (sigma == "relu"):
+        elif sigma == "relu":
             self.act = nn.ReLU()
-        elif (sigma == "identity"):
+        elif sigma == "identity":
             self.act = nn.Identity()
         else:
             print("Error. The chosen sigma function is not valid. Tanh() has been applied.")
@@ -86,14 +92,21 @@ class _System_contractive(nn.Module):
         vec = torch.zeros(self.nq, 1, device=self.device)
         vec[0, 0] = 1.
         w = torch.zeros(n_initial_states, self.nq, device=self.device)
-        v = (F.linear(xi, C1[0, :]) + self.bv[0] * torch.ones(n_initial_states, device=self.device) + F.linear(u, self.D12[0, :])).unsqueeze(1)
+        v = (F.linear(xi, C1[0, :]) + self.bv[0] * torch.ones(n_initial_states, device=self.device) + F.linear(u,
+                                                                                                               self.D12[
+                                                                                                               0,
+                                                                                                               :])).unsqueeze(
+            1)
         w = w + F.linear(self.act(v), vec)
         for i in range(1, self.nq):
             vec = torch.zeros(self.nq, 1, device=self.device)
             vec[i, 0] = 1.
-            v = (F.linear(xi, C1[i, :]) + F.linear(w, D11[i, :]) + self.bv[i] * torch.ones(n_initial_states, device=self.device) + F.linear(u, self.D12[i, :])).unsqueeze(1)
+            v = (F.linear(xi, C1[i, :]) + F.linear(w, D11[i, :]) + self.bv[i] * torch.ones(n_initial_states,
+                                                                                           device=self.device) + F.linear(
+                u, self.D12[i, :])).unsqueeze(1)
             w = w + F.linear(self.act(v), vec)
-        xi_ = F.linear(xi, A) + F.linear(w, B1) + F.linear(torch.ones(n_initial_states, 1, device=self.device), self.bx) + F.linear(u, self.B2)
+        xi_ = F.linear(xi, A) + F.linear(w, B1) + F.linear(torch.ones(n_initial_states, 1, device=self.device),
+                                                           self.bx) + F.linear(u, self.B2)
         return xi_
 
     def output(self, xi, u):
@@ -115,12 +128,18 @@ class _System_contractive(nn.Module):
         vec = torch.zeros(self.nq, 1, device=self.device)
         vec[0, 0] = 1.
         w = torch.zeros(n_initial_states, self.nq, device=self.device)
-        v = (F.linear(xi, C1[0, :]) + self.bv[0] * torch.ones(n_initial_states, device=self.device) + F.linear(u, self.D12[0, :])).unsqueeze(1)
+        v = (F.linear(xi, C1[0, :]) + self.bv[0] * torch.ones(n_initial_states, device=self.device) + F.linear(u,
+                                                                                                               self.D12[
+                                                                                                               0,
+                                                                                                               :])).unsqueeze(
+            1)
         w = w + F.linear(self.act(v), vec)
         for i in range(1, self.nq):
             vec = torch.zeros(self.nq, 1, device=self.device)
             vec[i, 0] = 1.
-            v = (F.linear(xi, C1[i, :]) + F.linear(w, D11[i, :]) + self.bv[i] * torch.ones(n_initial_states, device=self.device) + F.linear(u, self.D12[i, :])).unsqueeze(1)
+            v = (F.linear(xi, C1[i, :]) + F.linear(w, D11[i, :]) + self.bv[i] * torch.ones(n_initial_states,
+                                                                                           device=self.device) + F.linear(
+                u, self.D12[i, :])).unsqueeze(1)
             w = w + F.linear(self.act(v), vec)
         yt = F.linear(xi, self.C2) + F.linear(w, self.D21) + F.linear(u, self.D22) + By
         return yt
@@ -147,12 +166,18 @@ class _System_contractive(nn.Module):
         vec = torch.zeros(self.nq, 1, device=self.device)
         vec[0, 0] = 1.
         w = torch.zeros(n_initial_states, self.nq, device=self.device)
-        v = (F.linear(xi, C1[0, :]) + self.bv[0] * torch.ones(n_initial_states, device=self.device) + F.linear(u, self.D12[0, :])).unsqueeze(1)
+        v = (F.linear(xi, C1[0, :]) + self.bv[0] * torch.ones(n_initial_states, device=self.device) + F.linear(u,
+                                                                                                               self.D12[
+                                                                                                               0,
+                                                                                                               :])).unsqueeze(
+            1)
         w = w + F.linear(self.act(v), vec)
         for i in range(1, self.nq):
             vec = torch.zeros(self.nq, 1, device=self.device)
             vec[i, 0] = 1.
-            v = (F.linear(xi, C1[i, :]) + F.linear(w, D11[i, :]) + self.bv[i] * torch.ones(n_initial_states, device=self.device) + F.linear(u, self.D12[i, :])).unsqueeze(1)
+            v = (F.linear(xi, C1[i, :]) + F.linear(w, D11[i, :]) + self.bv[i] * torch.ones(n_initial_states,
+                                                                                           device=self.device) + F.linear(
+                u, self.D12[i, :])).unsqueeze(1)
             w = w + F.linear(self.act(v), vec)
         return w
 
@@ -174,7 +199,8 @@ class _System_contractive(nn.Module):
         Z = -H2 - self.Chi
         B1 = F.linear(torch.inverse(P), Z.T)
 
-        delta_xdot = F.linear(delta_x, A) + F.linear(delta_w, B1) + F.linear(torch.ones(1, 1), self.bx) + F.linear(delta_u, self.B2)
+        delta_xdot = F.linear(delta_x, A) + F.linear(delta_w, B1) + F.linear(torch.ones(1, 1), self.bx) + F.linear(
+            delta_u, self.B2)
         Vdot = F.linear(F.linear(delta_xdot, P.T), delta_x) + F.linear(F.linear(delta_x, P.T), delta_xdot)
         return Vdot
 
@@ -182,6 +208,7 @@ class _System_contractive(nn.Module):
         """(Dummy function)
         """
         return 0
+
 
 class NODE_REN(nn.Module):
     def __init__(self, nx, ny, nu, nq, sigma="tanh", epsilon=1.0e-2, device="cpu", bias=False, alpha=0.0,
@@ -193,25 +220,11 @@ class NODE_REN(nn.Module):
 
     def forward(self, t, x, u):
         self.nfe += 1
-        if torch.isnan(x).any() or torch.isinf(x).any():
-            x = torch.nan_to_num(x, nan=0.0, posinf=1e6, neginf=-1e6)
-        if torch.isnan(u).any() or torch.isinf(u).any():
-            u = torch.nan_to_num(u, nan=0.0, posinf=1.0, neginf=-1.0)
-
         xdot = self.sys(t, x, u)
-
-        #xdot = torch.clamp(xdot, min=-10.0, max=10.0)
-        xdot = torch.nan_to_num(xdot, nan=0.0, posinf=1e6, neginf=-1e6)
         return xdot
 
     def output(self, x, u):
-        if torch.isnan(x).any() or torch.isinf(x).any():
-            x = torch.nan_to_num(x, nan=0.0, posinf=1e6, neginf=-1e6)
-        if torch.isnan(u).any() or torch.isinf(u).any():
-            u = torch.nan_to_num(u, nan=0.0, posinf=1.0, neginf=-1.0)
-
         yt = self.sys.output(x, u)
-        yt = torch.nan_to_num(yt, nan=0.0, posinf=1e6, neginf=-1e6)
         return yt
 
     @property

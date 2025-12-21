@@ -9,11 +9,13 @@ from tensordict.nn import TensorDictParams
 from torchdiffeq import odeint_adjoint as odeint
 from implicit_layers.noderen import NODE_REN
 
+
 class WorldModel(nn.Module):
     """
     TD-MPC2 implicit world model architecture.
     Can be used for both single-task and multi-task experiments.
     """
+
     def __init__(self, cfg):
         super().__init__()
         self.cfg = cfg
@@ -37,7 +39,10 @@ class WorldModel(nn.Module):
             linear_output=cfg.noderen_linear_output
         )
 
-        # ÐÐžÐ’ÐžÐ•: ÐŸÐ°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ñ‹ warmup Ð¸ update scheduling Ð´Ð»Ñ NODE-REN
+        # LayerNorm для стабилизации входа в динамику
+        self.dynamics_norm = nn.LayerNorm(cfg.latent_dim)
+
+        # Параметры warmup и update scheduling для NODE-REN
         self.noderen_warmup_steps = getattr(cfg, 'noderen_warmup_steps', 5000)
         self.current_step = 0
 
@@ -139,11 +144,9 @@ class WorldModel(nn.Module):
                     reset_norm(encoder.deq_func)
 
     def _get_noderen_warmup_scale(self):
-
         if self.current_step >= self.noderen_warmup_steps:
             return 1.0
-
-        # Ð›Ð¸Ð½ÐµÐ¹Ð½Ñ‹Ð¹ warmup
+        # Линейный warmup
         warmup_progress = self.current_step / self.noderen_warmup_steps
         return warmup_progress
 
@@ -162,13 +165,11 @@ class WorldModel(nn.Module):
 
         warmup_scale = self._get_noderen_warmup_scale()
 
-        with torch.no_grad():
-            z_norm = torch.norm(z, dim=-1, keepdim=True)
-            if (z_norm > 100).any():
-                z = z / (z_norm / 10.0 + 1e-8)
+        # Нормализация входа в динамику
+        z_normalized = self.dynamics_norm(z)
 
         if self.cfg.noderen_method == 'euler':
-            xdot = self._dynamics(0.0, z, u)
+            xdot = self._dynamics(0.0, z_normalized, u)
 
             if warmup_scale < 1.0:
                 z_next = z + warmup_scale * self.cfg.noderen_dt * xdot
@@ -179,11 +180,9 @@ class WorldModel(nn.Module):
             time_span = torch.tensor([0.0, self.cfg.noderen_dt], device=z.device)
 
             def dynamics_func(t, state):
-                state_norm = torch.norm(state, dim=-1, keepdim=True)
-                if (state_norm > 100).any():
-                    state = state / (state_norm / 10.0 + 1e-8)
-
-                xdot = self._dynamics(t, state, u)
+                # Применяем нормализацию к текущему состоянию
+                state_normalized = self.dynamics_norm(state)
+                xdot = self._dynamics(t, state_normalized, u)
 
                 if warmup_scale < 1.0:
                     return warmup_scale * xdot
@@ -206,14 +205,11 @@ class WorldModel(nn.Module):
                 z_next = z_trajectory[-1]
             except RuntimeError as e:
                 print(f"ODE integration failed: {e}, falling back to Euler")
-                xdot = self._dynamics(0.0, z, u)
+                xdot = self._dynamics(0.0, z_normalized, u)
                 if warmup_scale < 1.0:
                     z_next = z + warmup_scale * self.cfg.noderen_dt * xdot
                 else:
                     z_next = z + self.cfg.noderen_dt * xdot
-
-        z_next = torch.nan_to_num(z_next, nan=0.0, posinf=10.0, neginf=-10.0)
-        z_next = torch.clamp(z_next, min=-10.0, max=10.0)
 
         if self.training:
             self.current_step += 1
