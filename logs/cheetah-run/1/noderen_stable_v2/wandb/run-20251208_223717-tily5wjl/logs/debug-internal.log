@@ -1,6 +1,0 @@
-{"time":"2025-12-08T22:37:18.133366598+01:00","level":"INFO","msg":"stream: starting","core version":"0.22.1"}
-{"time":"2025-12-08T22:37:18.454612465+01:00","level":"INFO","msg":"stream: created new stream","id":"tily5wjl"}
-{"time":"2025-12-08T22:37:18.45465438+01:00","level":"INFO","msg":"handler: started","stream_id":"tily5wjl"}
-{"time":"2025-12-08T22:37:18.457104354+01:00","level":"INFO","msg":"stream: started","id":"tily5wjl"}
-{"time":"2025-12-08T22:37:18.457155163+01:00","level":"INFO","msg":"writer: started","stream_id":"tily5wjl"}
-{"time":"2025-12-08T22:37:18.457154743+01:00","level":"INFO","msg":"sender: started","stream_id":"tily5wjl"}

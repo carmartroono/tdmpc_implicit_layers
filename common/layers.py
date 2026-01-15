@@ -1,20 +1,22 @@
+"""
+layers.py - TD-MPC2 layers with DEQ encoder support
+
+Supports both standard MLP encoders and DEQ (Deep Equilibrium) encoders.
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from tensordict import from_modules
 from copy import deepcopy
-from torchdeq import get_deq
-from torchdeq.norm import apply_norm, reset_norm
-from implicit_layers.deq_encoder import DEQ_MLP,DEQ_CNN,DEQStats
+from implicit_layers.deq_encoder import DEQ_MLP, DEQ_CNN
+
 
 class Ensemble(nn.Module):
-    """
-    Vectorized ensemble of modules.
-    """
+    """Vectorized ensemble of modules."""
 
     def __init__(self, modules, **kwargs):
         super().__init__()
-        # combine_state_for_ensemble causes graph breaks
         self.params = from_modules(*modules, as_module=True)
         with self.params[0].data.to("meta").to_module(modules[0]):
             self.module = deepcopy(modules[0])
@@ -36,10 +38,7 @@ class Ensemble(nn.Module):
 
 
 class ShiftAug(nn.Module):
-    """
-    Random shift image augmentation.
-    Adapted from https://github.com/facebookresearch/drqv2
-    """
+    """Random shift image augmentation."""
 
     def __init__(self, pad=3):
         super().__init__()
@@ -63,22 +62,14 @@ class ShiftAug(nn.Module):
 
 
 class PixelPreprocess(nn.Module):
-    """
-    Normalizes pixel observations to [-0.5, 0.5].
-    """
-
-    def __init__(self):
-        super().__init__()
+    """Normalizes pixel observations to [-0.5, 0.5]."""
 
     def forward(self, x):
         return x.div(255.).sub(0.5)
 
 
 class SimNorm(nn.Module):
-    """
-    Simplicial normalization.
-    Adapted from https://arxiv.org/abs/2204.00616.
-    """
+    """Simplicial normalization."""
 
     def __init__(self, cfg):
         super().__init__()
@@ -95,9 +86,7 @@ class SimNorm(nn.Module):
 
 
 class NormedLinear(nn.Linear):
-    """
-    Linear layer with LayerNorm, activation, and optionally dropout.
-    """
+    """Linear layer with LayerNorm, activation, and optionally dropout."""
 
     def __init__(self, *args, dropout=0., act=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -115,33 +104,27 @@ class NormedLinear(nn.Linear):
 
     def __repr__(self):
         repr_dropout = f", dropout={self.dropout.p}" if self.dropout else ""
-        return f"NormedLinear(in_features={self.in_features}, " \
-               f"out_features={self.out_features}, " \
-               f"bias={self.bias is not None}{repr_dropout}, " \
+        return f"NormedLinear(in_features={self.in_features}, "\
+               f"out_features={self.out_features}, "\
+               f"bias={self.bias is not None}{repr_dropout}, "\
                f"act={self.act.__class__.__name__})"
 
 
 def mlp(in_dim, mlp_dims, out_dim, act=None, dropout=0.):
-    """
-    Basic building block of TD-MPC2.
-    MLP with LayerNorm, Mish activations, and optionally dropout.
-    """
+    """MLP with LayerNorm, Mish activations, and optionally dropout."""
     if isinstance(mlp_dims, int):
         mlp_dims = [mlp_dims]
     dims = [in_dim] + mlp_dims + [out_dim]
-    mlp = nn.ModuleList()
+    mlp_layers = nn.ModuleList()
     for i in range(len(dims) - 2):
-        mlp.append(NormedLinear(dims[i], dims[i + 1], dropout=dropout * (i == 0)))
-    mlp.append(NormedLinear(dims[-2], dims[-1], act=act) if act else nn.Linear(dims[-2], dims[-1]))
-    return nn.Sequential(*mlp)
+        mlp_layers.append(NormedLinear(dims[i], dims[i + 1], dropout=dropout * (i == 0)))
+    mlp_layers.append(NormedLinear(dims[-2], dims[-1], act=act) if act else nn.Linear(dims[-2], dims[-1]))
+    return nn.Sequential(*mlp_layers)
 
 
 def conv(in_shape, num_channels, act=None):
-    """
-    Basic convolutional encoder for TD-MPC2 with raw image observations.
-    4 layers of convolution with ReLU activations, followed by a linear layer.
-    """
-    assert in_shape[-1] == 64  # assumes rgb observations to be 64x64
+    """Basic convolutional encoder for TD-MPC2."""
+    assert in_shape[-1] == 64
     layers = [
         ShiftAug(), PixelPreprocess(),
         nn.Conv2d(in_shape[0], num_channels, 7, stride=2), nn.ReLU(inplace=False),
@@ -154,9 +137,7 @@ def conv(in_shape, num_channels, act=None):
 
 
 def enc(cfg, out={}):
-    """
-    Returns a dictionary of encoders for each observation in the dict.
-    """
+    """Returns standard MLP/CNN encoders."""
     for k in cfg.obs_shape.keys():
         if k == 'state':
             out[k] = mlp(cfg.obs_shape[k][0] + cfg.task_dim, max(cfg.num_enc_layers - 1, 1) * [cfg.enc_dim],
@@ -168,21 +149,60 @@ def enc(cfg, out={}):
     return nn.ModuleDict(out)
 
 
+def enc_deq(cfg, out={}):
+    """Returns DEQ (Deep Equilibrium) encoders."""
+    for k in cfg.obs_shape.keys():
+        if k == 'state':
+            out[k] = DEQ_MLP(
+                input_dim=cfg.obs_shape[k][0] + cfg.task_dim,
+                hidden_dim=cfg.enc_dim,
+                output_dim=cfg.latent_dim,
+                act=SimNorm(cfg),
+                f_max_iter=getattr(cfg, 'deq_f_max_iter', 24),
+                b_max_iter=getattr(cfg, 'deq_b_max_iter', 24),
+                f_tol=getattr(cfg, 'deq_f_tol', 1e-3),
+                b_tol=getattr(cfg, 'deq_b_tol', 1e-6),
+                f_solver=getattr(cfg, 'deq_f_solver', 'anderson'),
+                b_solver=getattr(cfg, 'deq_b_solver', 'anderson'),
+                deq_num_layers=getattr(cfg, 'deq_num_layers', 2),
+                dropout=getattr(cfg, 'deq_dropout', 0.0),
+                log_stats=getattr(cfg, 'deq_log_stats', False),
+                log_every_n_steps=getattr(cfg, 'deq_log_every_n_steps', 100),
+                deq_lam=getattr(cfg, 'deq_lam', 0.5),
+            )
+        elif k == 'rgb':
+            out[k] = DEQ_CNN(
+                obs_shape=cfg.obs_shape[k],
+                num_channels=cfg.num_channels,
+                latent_dim=cfg.latent_dim,
+                act=SimNorm(cfg),
+                f_max_iter=getattr(cfg, 'deq_f_max_iter', 24),
+                b_max_iter=getattr(cfg, 'deq_b_max_iter', 24),
+                f_tol=getattr(cfg, 'deq_f_tol', 1e-3),
+                b_tol=getattr(cfg, 'deq_b_tol', 1e-6),
+                f_solver=getattr(cfg, 'deq_f_solver', 'anderson'),
+                b_solver=getattr(cfg, 'deq_b_solver', 'anderson'),
+                deq_num_layers=getattr(cfg, 'deq_num_layers', 2),
+                log_stats=getattr(cfg, 'deq_log_stats', False),
+                log_every_n_steps=getattr(cfg, 'deq_log_every_n_steps', 100),
+                deq_lam=getattr(cfg, 'deq_lam', 0.5),
+            )
+        else:
+            raise NotImplementedError(f"DEQ encoder for observation type {k} not implemented.")
+    return nn.ModuleDict(out)
+
+
 def api_model_conversion(target_state_dict, source_state_dict):
-    """
-    Converts a checkpoint from our old API to the new torch.compile compatible API.
-    """
-    # check whether checkpoint is already in the new format
+    """Converts checkpoint from old API to new torch.compile compatible API."""
     if "_detach_Qs_params.0.weight" in source_state_dict:
         return source_state_dict
 
     name_map = ['weight', 'bias', 'ln.weight', 'ln.bias']
     new_state_dict = dict()
 
-    # rename keys
     for key, val in list(source_state_dict.items()):
         if key.startswith('_Qs.'):
-            num = key[len('_Qs.params.'):len(key)]
+            num = key[len('_Qs.params.'):]
             new_key = str(int(num) // 4) + "." + name_map[int(num) % 4]
             new_total_key = "_Qs.params." + new_key
             del source_state_dict[key]
@@ -190,112 +210,29 @@ def api_model_conversion(target_state_dict, source_state_dict):
             new_total_key = "_detach_Qs_params." + new_key
             new_state_dict[new_total_key] = val
         elif key.startswith('_target_Qs.'):
-            num = key[len('_target_Qs.params.'):len(key)]
+            num = key[len('_target_Qs.params.'):]
             new_key = str(int(num) // 4) + "." + name_map[int(num) % 4]
             new_total_key = "_target_Qs_params." + new_key
             del source_state_dict[key]
             new_state_dict[new_total_key] = val
 
-    # add batch_size and device from target_state_dict to new_state_dict
     for prefix in ('_Qs.', '_detach_Qs_', '_target_Qs_'):
         for key in ('__batch_size', '__device'):
             new_key = prefix + 'params.' + key
             new_state_dict[new_key] = target_state_dict[new_key]
 
-    # check that every key in new_state_dict is in target_state_dict
     for key in new_state_dict.keys():
         assert key in target_state_dict, f"key {key} not in target_state_dict"
-    # check that all Qs keys in target_state_dict are in new_state_dict
     for key in target_state_dict.keys():
         if 'Qs' in key:
             assert key in new_state_dict, f"key {key} not in new_state_dict"
-    # check that source_state_dict contains no Qs keys
     for key in source_state_dict.keys():
         assert 'Qs' not in key, f"key {key} contains 'Qs'"
 
-    # copy log_std_min and log_std_max from target_state_dict to new_state_dict
     new_state_dict['log_std_min'] = target_state_dict['log_std_min']
     new_state_dict['log_std_dif'] = target_state_dict['log_std_dif']
     if '_action_masks' in target_state_dict:
         new_state_dict['_action_masks'] = target_state_dict['_action_masks']
 
-    # copy new_state_dict to source_state_dict
     source_state_dict.update(new_state_dict)
-
     return source_state_dict
-
-
-def enc_deq(cfg, out={}):
-    """
-    Returns a dictionary of improved DEQ encoders with optimal hyperparameters.
-    """
-    for k in cfg.obs_shape.keys():
-        if k == 'state':
-            out[k] = DEQ_MLP(
-                input_dim=cfg.obs_shape[k][0] + cfg.task_dim,
-                hidden_dim=cfg.enc_dim,
-                output_dim=cfg.latent_dim,
-                act=SimNorm(cfg) if hasattr(cfg, 'simnorm') else None,
-                # Optimized hyperparameters
-                f_max_iter=getattr(cfg, 'deq_f_max_iter', 100),
-                b_max_iter=getattr(cfg, 'deq_b_max_iter', 100),
-                f_tol=getattr(cfg, 'deq_f_tol', 1e-3),
-                b_tol=getattr(cfg, 'deq_b_tol', 1e-6),
-                norm_type=getattr(cfg, 'deq_mlp_norm_type','layer'),
-                f_solver=getattr(cfg, 'deq_f_solver', 'anderson'),
-                b_solver=getattr(cfg, 'deq_b_solver', 'anderson'),
-                # Architecture improvements
-                deq_num_layers=getattr(cfg, 'deq_num_layers', 2),
-                dropout=getattr(cfg, 'deq_dropout', 0.1),
-                # Logging
-                log_stats=getattr(cfg, 'deq_log_stats', True),
-                log_every_n_steps=getattr(cfg, 'deq_log_every_n_steps', 100),
-                deq_lam=getattr(cfg, 'deq_tau', 0.1),
-                deq_tau=getattr(cfg, 'deq_tau', 1.0)
-            )
-        elif k == 'rgb':
-            out[k] = DEQ_CNN(
-                obs_shape=cfg.obs_shape[k],
-                num_channels=cfg.num_channels,
-                latent_dim=cfg.latent_dim,
-                act=SimNorm(cfg) if hasattr(cfg, 'simnorm') else None,
-                # Optimized hyperparameters
-                f_max_iter=getattr(cfg, 'deq_f_max_iter', 100),
-                b_max_iter=getattr(cfg, 'deq_b_max_iter', 100),
-                f_tol=getattr(cfg, 'deq_f_tol', 1e-3),
-                b_tol=getattr(cfg, 'deq_b_tol', 1e-6),
-                f_solver=getattr(cfg, 'deq_f_solver', 'anderson'),
-                b_solver=getattr(cfg, 'deq_b_solver', 'anderson'),
-                # Architecture improvements
-                deq_num_layers=getattr(cfg, 'deq_num_layers', 2),
-                norm_type=getattr(cfg, 'deq_cnn_norm_type', 'batch'),  # ÐÐžÐ’ÐžÐ•: Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€ Ð½Ð¾Ñ€Ð¼Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ð¸
-                # Logging
-                log_stats=getattr(cfg, 'deq_log_stats', True),
-                log_every_n_steps=getattr(cfg, 'deq_log_every_n_steps', 100),
-                deq_lam=getattr(cfg, 'deq_tau', 0.1),
-                deq_tau=getattr(cfg, 'deq_tau', 1.0)
-            )
-        else:
-            raise NotImplementedError(f"DEQ encoder for observation type {k} not implemented.")
-    return nn.ModuleDict(out)
-
-
-# Helper function to get convergence metrics for TensorBoard/Wandb
-def get_deq_metrics(model):
-    """
-    Extract DEQ convergence metrics from all encoders for logging.
-
-    Returns:
-        dict: Dictionary of metrics for logging
-    """
-    metrics = {}
-
-    for name, module in model.named_modules():
-        if isinstance(module, (DEQ_MLP, DEQ_CNN)):
-            summary = module.stats.get_summary()
-            if summary:
-                prefix = f"deq/{name.replace('.', '/')}"
-                for k, v in summary.items():
-                    metrics[f"{prefix}/{k}"] = v
-
-    return metrics
