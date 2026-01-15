@@ -12,12 +12,12 @@ eval_episodes: 10
 eval_freq: 5000
 
 # training
-steps: 5_000_000
+steps: 500_000
 batch_size: 256
 reward_coef: 0.1
 value_coef: 0.1
 termination_coef: 1
-consistency_coef: 5
+consistency_coef: 15
 rho: 0.5
 lr: 3e-4
 enc_lr_scale: 0.3
@@ -26,8 +26,8 @@ tau: 0.01
 discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
-buffer_size: 400_000
-exp_name: noderen_warmup
+buffer_size: 500_000
+exp_name: deq_noderen_cheetah
 data_dir: ???
 
 # planning
@@ -63,40 +63,50 @@ num_q: 5
 dropout: 0.01
 simnorm_dim: 8
 
-# DEQ hyperparameters - STABLE
+# =============================================================================
+# DEQ Encoder Configuration
+# =============================================================================
 deq_f_max_iter: 20
 deq_b_max_iter: 20
-deq_f_tol: 1e-4
+deq_f_tol: 1e-3
 deq_b_tol: 1e-5
 deq_f_solver: 'anderson'
-deq_b_solver: 'broyden'     #тоже anderson попорбовать
+deq_b_solver: 'anderson'
 deq_num_layers: 2
-deq_dropout: 0.05
-deq_mlp_norm_type: 'layer'
-deq_cnn_norm_type: 'none'
-deq_log_stats: true
-deq_log_every_n_steps: 100
-deq_lam: 1.0
-deq_tau: 1.0
+deq_dropout: 0.0
+deq_log_stats: false
+deq_log_every_n_steps: 500
+deq_lam: 0.5
 
-noderen_nq: 64
+# =============================================================================
+# NODE-REN Dynamics Configuration
+# =============================================================================
+noderen_nq: 48
 noderen_sigma: 'tanh'
-noderen_epsilon: 0.05
+noderen_epsilon: 0.01
 noderen_bias: true
-noderen_alpha: 0.1
+noderen_alpha: 0.02
 noderen_linear_output: false
-
-noderen_dt: 0.1
+noderen_dt: 0.01
 noderen_method: 'euler'
-noderen_step_size: 0.025
-noderen_rtol: 1.0e-5
-noderen_atol: 1.0e-7
-noderen_lr_scale: 0.25
-noderen_warmup_steps: 50_000
-noderen_update_freq: 10
+noderen_lr_scale: 0.15
 
-# logging
-wandb_project: tdmpc2_noderen_warmup
+# =============================================================================
+# 4-Phase Warmup (shorter for cheetah, more time for full training)
+# =============================================================================
+# Phase 1 (0-20k):    4%  - Dynamics-only
+# Phase 2 (20k-40k):  4%  - Add reward
+# Phase 3 (40k-60k):  4%  - Add value
+# Phase 4 (60k-500k): 88% - Full training
+
+noderen_phase1_steps: 20000
+noderen_phase2_steps: 40000
+noderen_phase3_steps: 60000
+
+# =============================================================================
+# Logging
+# =============================================================================
+wandb_project: tdmpc2_deq_noderen
 wandb_entity: carmartroono-rptu
 wandb_silent: false
 enable_wandb: true
